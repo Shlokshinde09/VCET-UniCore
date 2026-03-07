@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Login</title>
+</head>
+
+<body>
+
+<h2>Student Login</h2>
+
+<input id="email" placeholder="Enter Email"/>
+<button onclick="login()">Login</button>
+
+<script>
+
+    function login(){
+
+    let email = document.getElementById("email").value;
+
+    fetch("http://localhost:8080/auth/login?email="+email,{
+    method:"POST"
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+    localStorage.setItem("studentId",data.id);
+
+    window.location.href="index.html";
+
+    })
+
+    }
+
+</script>
+
+</body>
+</html>

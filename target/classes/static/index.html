@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Academic Dashboard</title>
+
+    <style>
+        body{
+        font-family: Arial;
+        background:#f4f6f9;
+        text-align:center;
+        }
+
+        .container{
+        width:600px;
+        margin:auto;
+        margin-top:40px;
+        background:white;
+        padding:20px;
+        border-radius:10px;
+        box-shadow:0px 0px 10px rgba(0,0,0,0.1);
+        }
+
+        .card{
+        margin:15px;
+        padding:15px;
+        background:#e9f2ff;
+        border-radius:8px;
+        }
+
+        button{
+        padding:10px 20px;
+        background:#007bff;
+        color:white;
+        border:none;
+        border-radius:5px;
+        cursor:pointer;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<h1>Student Academic Dashboard</h1>
+
+<div class="container">
+
+    <div class="card">
+        <h3>Current CGPA</h3>
+        <p id="cgpa">--</p>
+    </div>
+
+    <div class="card">
+        <h3>Placement Status</h3>
+        <p id="placement">--</p>
+    </div>
+
+    <div class="card">
+        <h3>Target SGPA Next Semester</h3>
+        <p id="target">--</p>
+    </div>
+
+    <div class="card">
+        <h3>SGPA Trend</h3>
+        <canvas id="trendChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h3>Eligible Companies</h3>
+        <p id="companies"></p>
+    </div>
+
+    <div class="card">
+        <h3>Placement Readiness Score</h3>
+        <p id="readiness">--</p>
+    </div>
+
+    <div class="card">
+        <h3>AI Predicted Final CGPA</h3>
+        <p id="aiCgpa">--</p>
+    </div>
+
+    <button onclick="loadData()">Load Student Data</button>
+
+</div>
+
+<script>
+
+    let chart;
+
+    function loadData(){
+
+    //readiness API
+    fetch("http://localhost:8080/analysis/readiness/"+localStorage.getItem("studentId"))
+    .then(res=>res.json())
+    .then(data=>{
+    document.getElementById("readiness").innerText =
+    data.readinessScore + " / 100 (" + data.level + ")";
+    })
+
+    //Placement Eligibility API
+    fetch("http://localhost:8080/analysis/companies/"+localStorage.getItem("studentId"))
+    .then(res=>res.json())
+    .then(data=>{
+    document.getElementById("companies").innerText =
+    data.eligibleCompanies.join(", ");
+    })
+
+    // Placement API
+    fetch("http://localhost:8080/analysis/placement/"+localStorage.getItem("studentId"))
+    .then(res=>res.json())
+    .then(data=>{
+    document.getElementById("cgpa").innerText=data.currentCGPA
+    document.getElementById("placement").innerText=data.placementStatus
+    })
+
+    // Target API
+    fetch("http://localhost:8080/analysis/target/"+localStorage.getItem("studentId"))
+    .then(res=>res.json())
+    .then(data=>{
+    document.getElementById("target").innerText=data.requiredNextSGPA
+    })
+
+    //ai api
+    fetch("http://localhost:8080/analysis/ai-cgpa/"+localStorage.getItem("studentId"))
+    .then(res=>res.json())
+    .then(data=>{
+    document.getElementById("aiCgpa").innerText = data.predictedFinalCGPA
+    })
+
+    // Trend API
+    fetch("http://localhost:8080/analysis/trend/"+localStorage.getItem("studentId"))
+    .then(res=>res.json())
+    .then(data=>{
+
+    let semesters = Object.keys(data.semesterSgpa)
+    let sgpa = Object.values(data.semesterSgpa)
+
+    createChart(semesters, sgpa)
+
+    })
+
+    }
+
+    function createChart(semesters, sgpa){
+
+    const ctx = document.getElementById('trendChart')
+
+    if(chart){
+    chart.destroy()
+    }
+
+    chart = new Chart(ctx,{
+    type:'line',
+    data:{
+    labels:semesters,
+    datasets:[{
+    label:'SGPA',
+    data:sgpa,
+    borderColor:'blue',
+    fill:false
+    }]
+    },
+    options:{
+    scales:{
+    y:{
+    beginAtZero:true,
+    max:10
+    }
+    }
+    }
+    })
+
+    }
+
+</script>
+
+</body>
+</html>
