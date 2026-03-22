@@ -12,29 +12,48 @@ public class ResultController {
 
     private final ResultRepository resultRepository;
     private final StudentRepository studentRepository;
-    private final SubjectRepository subjectRepository;
 
     public ResultController(ResultRepository resultRepository,
-                            StudentRepository studentRepository,
-                            SubjectRepository subjectRepository) {
+                            StudentRepository studentRepository) {
         this.resultRepository = resultRepository;
         this.studentRepository = studentRepository;
-        this.subjectRepository = subjectRepository;
     }
 
-    // 🔹 Add result (marks)
     @PostMapping
-    public Result addResult(@RequestParam Long studentId,
-                            @RequestParam Long subjectId,
-                            @RequestParam double gradePoint) {
-
+    public Result addResult(@RequestBody java.util.Map<String, Object> payload) {
+        
+        java.util.Map<String, Object> studentMap = (java.util.Map<String, Object>) payload.get("student");
+        Long studentId = Long.parseLong(studentMap.get("id").toString());
+        
         Student student = studentRepository.findById(studentId).orElseThrow();
-        Subject subject = subjectRepository.findById(subjectId).orElseThrow();
 
         Result result = new Result();
         result.setStudent(student);
-        result.setSubject(subject);
-        result.setGradePoint(gradePoint);
+        result.setCourseCode(String.valueOf(payload.get("courseCode")));
+        result.setCourseName(String.valueOf(payload.get("courseName")));
+        result.setInternalMarks(Double.parseDouble(payload.get("internalMarks").toString()));
+        result.setExternalMarks(Double.parseDouble(payload.get("externalMarks").toString()));
+        result.setCredits(Integer.parseInt(payload.get("credits").toString()));
+        result.setSemester(Integer.parseInt(payload.get("semester").toString()));
+
+        // MU NEP Calculation Logic
+        double total = result.getInternalMarks() + result.getExternalMarks();
+        result.setTotalMarks(total);
+
+        String grade = "F";
+        double point = 0.0;
+
+        if (total >= 90) { grade = "O"; point = 10.0; }
+        else if (total >= 80) { grade = "A+"; point = 9.0; }
+        else if (total >= 70) { grade = "A"; point = 8.0; }
+        else if (total >= 60) { grade = "B+"; point = 7.0; }
+        else if (total >= 50) { grade = "B"; point = 6.0; }
+        else if (total >= 45) { grade = "C"; point = 5.0; }
+        else if (total >= 40) { grade = "P"; point = 4.0; }
+
+        result.setGrade(grade);
+        result.setGradePoint(point);
+        result.setCreditGrade(point * result.getCredits());
 
         return resultRepository.save(result);
     }
@@ -45,49 +64,47 @@ public class ResultController {
         return resultRepository.findByStudentId(studentId);
     }
 
+    // 🔹 Get ALL results
+    @GetMapping
+    public List<Result> getAllResults() {
+        return resultRepository.findAll();
+    }
+
+    // 🔹 Delete a result by id
+    @DeleteMapping("/{id}")
+    public void deleteResult(@PathVariable Long id) {
+        resultRepository.deleteById(id);
+    }
+
     // 🔹 Calculate CGPA
     @GetMapping("/cgpa/{studentId}")
     public double calculateCGPA(@PathVariable Long studentId) {
-
         List<Result> results = resultRepository.findByStudentId(studentId);
-
-        double totalWeightedScore = 0;
+        double totalCreditGrades = 0;
         int totalCredits = 0;
 
-        for (Result result : results) {
-            double grade = result.getGradePoint();
-            int credits = result.getSubject().getCredits();
-
-            totalWeightedScore += grade * credits;
-            totalCredits += credits;
+        for (Result r : results) {
+            totalCreditGrades += r.getCreditGrade();
+            totalCredits += r.getCredits();
         }
 
         if (totalCredits == 0) return 0;
-
-        return Math.round((totalWeightedScore / totalCredits) * 100.0) / 100.0;
+        return Math.round((totalCreditGrades / totalCredits) * 100.0) / 100.0;
     }
 
     // 🔹 Calculate SGPA (semester-wise)
     @GetMapping("/sgpa/{studentId}/{semester}")
-    public double calculateSGPA(@PathVariable Long studentId,
-                                @PathVariable int semester) {
-
-        List<Result> results =
-                resultRepository.findByStudentIdAndSubjectSemester(studentId, semester);
-
-        double totalWeightedScore = 0;
+    public double calculateSGPA(@PathVariable Long studentId, @PathVariable int semester) {
+        List<Result> results = resultRepository.findByStudentIdAndSemester(studentId, semester);
+        double totalCreditGrades = 0;
         int totalCredits = 0;
 
-        for (Result result : results) {
-            double grade = result.getGradePoint();
-            int credits = result.getSubject().getCredits();
-
-            totalWeightedScore += grade * credits;
-            totalCredits += credits;
+        for (Result r : results) {
+            totalCreditGrades += r.getCreditGrade();
+            totalCredits += r.getCredits();
         }
 
         if (totalCredits == 0) return 0;
-
-        return Math.round((totalWeightedScore / totalCredits) * 100.0) / 100.0;
+        return Math.round((totalCreditGrades / totalCredits) * 100.0) / 100.0;
     }
 }

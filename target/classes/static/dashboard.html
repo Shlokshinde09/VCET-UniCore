@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Insights & Placement Readiness</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --card-border: rgba(0, 0, 0, 0.05);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent-primary: #2563eb;
+            --accent-glow: rgba(37, 99, 235, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Background glow effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -20%;
+            left: -10%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            width: 200px;
+        }
+        
+        input[type="text"]:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 14px 0 var(--accent-glow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 var(--accent-glow);
+        }
+
+        .theme-toggle {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+            box-shadow: none;
+            padding: 0.75rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .dashboard-grid.loaded {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Subtle top border highlight on cards */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), transparent);
+            opacity: 0.5;
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .card .desc {
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .chart-container {
+            grid-column: 1 / -1;
+            height: 350px;
+            padding: 1.5rem;
+        }
+
+        .insights-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: var(--card-border);
+            color: var(--text-primary);
+        }
+
+        .badge.strong { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge.weak { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .badge.company { background: rgba(59, 130, 246, 0.2); color: var(--accent-primary); }
+
+        /* Loader */
+        .loader {
+            display: none;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--accent-primary);
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .insights-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Project Elevate</h1>
+    <p class="subtitle">AI-Powered Academic & Placement Readiness Dashboard</p>
+
+    <div class="controls">
+        <input type="text" id="studentId" placeholder="Enter Student ID (e.g. 1)" value="1">
+        <button onclick="loadData()">Analyze Data</button>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️ Light</button>
+        <div class="loader" id="loader"></div>
+    </div>
+
+    <div class="dashboard-grid" id="dashboard">
+        <!-- Metrics -->
+        <div class="card">
+            <h3>Current CGPA</h3>
+            <div class="value" id="cgpa">--</div>
+            <div class="desc" id="trend">--</div>
+        </div>
+
+        <div class="card">
+            <h3>Placement Readiness</h3>
+            <div class="value" id="readinessScore">--</div>
+            <div class="desc" id="readinessLevel">--</div>
+        </div>
+
+        <div class="card">
+            <h3>AI Predicted Final CGPA</h3>
+            <div class="value" id="aiCgpa">--</div>
+            <div class="desc">Based on RandomForest Regression</div>
+        </div>
+
+        <div class="card">
+            <h3>Target SGPA (Next Sem)</h3>
+            <div class="value" id="target">--</div>
+            <div class="desc">To stay on optimal trajectory</div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card chart-container">
+            <h3>SGPA Progression</h3>
+            <canvas id="trendChart"></canvas>
+        </div>
+
+        <!-- Detailed Insights -->
+        <div class="insights-section">
+            <div class="card">
+                <h3>Eligible Companies</h3>
+                <div id="companies" style="margin-bottom: 1rem;">--</div>
+                <div class="desc" id="placementDesc">--</div>
+            </div>
+
+            <div class="card">
+                <h3>Academic AI Advisor</h3>
+                <div class="desc" id="advice" style="margin-bottom: 1rem; font-size: 1rem; color: var(--text-primary);">--</div>
+                
+                <div style="margin-top: 1rem;">
+                    <h4 style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Subject Analysis</h4>
+                    <div id="subjectTags">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        const root = document.documentElement;
+        
+        // Theme logic
+        function toggleTheme() {
+            const current = root.getAttribute('data-theme');
+            if (current === 'light') {
+                root.removeAttribute('data-theme');
+                document.getElementById('themeBtn').innerText = '☀️ Light';
+            } else {
+                root.setAttribute('data-theme', 'light');
+                document.getElementById('themeBtn').innerText = '🌙 Dark';
+            }
+            if(chart) {
+                // update chart colors based on theme
+                chart.options.scales.x.grid.color = getComputedStyle(root).getPropertyValue('--card-border');
+                chart.options.scales.y.grid.color = getComputedStyle(root).getPropertyValue('--card-border');
+                chart.options.scales.x.ticks.color = getComputedStyle(root).getPropertyValue('--text-secondary');
+                chart.options.scales.y.ticks.color = getComputedStyle(root).getPropertyValue('--text-secondary');
+                chart.update();
+            }
+        }
+
+        async function loadData() {
+            const id = document.getElementById("studentId").value;
+            if(!id) return alert("Please enter a Student ID");
+
+            document.getElementById("loader").style.display = "block";
+            const dash = document.getElementById("dashboard");
+            dash.classList.remove("loaded");
+
+            try {
+                // Fetch data in parallel
+                const [readinessRes, companiesRes, placementRes, targetRes, aiRes, advisorRes, trendRes] = await Promise.all([
+                    fetch(`http://localhost:8080/analysis/readiness/${id}`),
+                    fetch(`http://localhost:8080/analysis/companies/${id}`),
+                    fetch(`http://localhost:8080/analysis/placement/${id}`),
+                    fetch(`http://localhost:8080/analysis/target/${id}`),
+                    fetch(`http://localhost:8080/analysis/ai-cgpa/${id}`),
+                    fetch(`http://localhost:8080/analysis/advisor/${id}`),
+                    fetch(`http://localhost:8080/analysis/trend/${id}`)
+                ]);
+
+                if(!readinessRes.ok) throw new Error("API failed");
+
+                const readiness = await readinessRes.json();
+                const companies = await companiesRes.json();
+                const placement = await placementRes.json();
+                const target = await targetRes.json();
+                const ai = await aiRes.json();
+                const advisor = await advisorRes.json();
+                const trend = await trendRes.json();
+
+                // Populate UI
+                document.getElementById("cgpa").innerText = placement.currentCGPA || '--';
+                document.getElementById("trend").innerText = "Trend: " + (trend.trend || 'Unknown');
+                
+                document.getElementById("readinessScore").innerText = readiness.readinessScore + " / 100";
+                
+                let rColor = "var(--success)";
+                if(readiness.level === "At Risk" || readiness.level === "Needs Improvement") rColor = "var(--danger)";
+                document.getElementById("readinessLevel").innerHTML = `<span style="color: ${rColor}">${readiness.level}</span>`;
+
+                document.getElementById("aiCgpa").innerText = ai.predictedFinalCGPA || '--';
+                document.getElementById("target").innerText = target.aiTargetSGPA || '--';
+
+                // Companies HTML
+                let compsHtml = "";
+                if(companies.eligibleCompanies && companies.eligibleCompanies.length > 0) {
+                    companies.eligibleCompanies.forEach(c => {
+                        compsHtml += `<span class="badge company">${c}</span>`;
+                    });
+                } else {
+                    compsHtml = "No companies currently eligible";
+                }
+                document.getElementById("companies").innerHTML = compsHtml;
+                document.getElementById("placementDesc").innerText = placement.placementStatus || '--';
+
+                // Advisor
+                document.getElementById("advice").innerText = advisor.advice || '--';
+
+                // Subjects tags
+                let tagsHtml = "";
+                if(advisor.strongSubjects && advisor.strongSubjects.length > 0) {
+                    advisor.strongSubjects.forEach(s => {
+                        tagsHtml += `<span class="badge strong">↑ ${s}</span>`;
+                    });
+                }
+                if(advisor.weakSubjects && advisor.weakSubjects.length > 0) {
+                    advisor.weakSubjects.forEach(s => {
+                        tagsHtml += `<span class="badge weak">↓ ${s}</span>`;
+                    });
+                }
+                if(tagsHtml === "") tagsHtml = "<span style='color:var(--text-secondary); font-size:0.875rem;'>No specific subject deviations.</span>";
+                
+                document.getElementById("subjectTags").innerHTML = tagsHtml;
+
+                // Render Chart
+                let semesters = Object.keys(trend.semesterSgpa);
+                let sgpas = Object.values(trend.semesterSgpa);
+                renderChart(semesters, sgpas);
+
+                // Reveal dashboard smoothly
+                setTimeout(() => dash.classList.add("loaded"), 100);
+
+            } catch(e) {
+                console.error(e);
+                alert("Failed to fetch data. Make sure the Spring Boot server is running and the database is populated.");
+            } finally {
+                document.getElementById("loader").style.display = "none";
+            }
+        }
+
+        function renderChart(semesters, sgpas) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            
+            if(chart) chart.destroy();
+
+            // Gradient fill
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');   
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+            const gridColor = getComputedStyle(root).getPropertyValue('--card-border');
+            const textColor = getComputedStyle(root).getPropertyValue('--text-secondary');
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: semesters.map(s => 'Sem ' + s),
+                    datasets: [{
+                        label: 'SGPA',
+                        data: sgpas,
+                        borderColor: '#3b82f6',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#3b82f6',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        fill: true,
+                        tension: 0.4 // Smooth curves
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Inter', size: 14 },
+                            bodyFont: { family: 'Inter', size: 14 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: Math.max(0, Math.min(...sgpas) - 1),
+                            max: 10,
+                            grid: { color: gridColor, drawBorder: false },
+                            ticks: { color: textColor, font: { family: 'Inter' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { family: 'Inter' } }
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

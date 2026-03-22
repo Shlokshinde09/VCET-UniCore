@@ -10,32 +10,55 @@ public class Result {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private double gradePoint;
-
     @ManyToOne
     @JoinColumn(name = "student_id")
     private Student student;
 
-    @ManyToOne
-    @JoinColumn(name = "subject_id")
-    private Subject subject;
+    private String courseCode;
+    private String courseName;
+    private double internalMarks;
+    private double externalMarks;
+    private double totalMarks;
+    private int credits;
+    private String grade;
+    private double gradePoint;
+    private double creditGrade;
+    private int semester;
 
     public Result() {}
 
-    public Result(double gradePoint, Student student, Subject subject) {
-        this.gradePoint = gradePoint;
-        this.student = student;
-        this.subject = subject;
-    }
-
     public Long getId() { return id; }
-
-    public double getGradePoint() { return gradePoint; }
-    public void setGradePoint(double gradePoint) { this.gradePoint = gradePoint; }
 
     public Student getStudent() { return student; }
     public void setStudent(Student student) { this.student = student; }
 
-    public Subject getSubject() { return subject; }
-    public void setSubject(Subject subject) { this.subject = subject; }
+    public String getCourseCode() { return courseCode; }
+    public void setCourseCode(String courseCode) { this.courseCode = courseCode; }
+
+    public String getCourseName() { return courseName; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
+
+    public double getInternalMarks() { return internalMarks; }
+    public void setInternalMarks(double internalMarks) { this.internalMarks = internalMarks; }
+
+    public double getExternalMarks() { return externalMarks; }
+    public void setExternalMarks(double externalMarks) { this.externalMarks = externalMarks; }
+
+    public double getTotalMarks() { return totalMarks; }
+    public void setTotalMarks(double totalMarks) { this.totalMarks = totalMarks; }
+
+    public int getCredits() { return credits; }
+    public void setCredits(int credits) { this.credits = credits; }
+
+    public String getGrade() { return grade; }
+    public void setGrade(String grade) { this.grade = grade; }
+
+    public double getGradePoint() { return gradePoint; }
+    public void setGradePoint(double gradePoint) { this.gradePoint = gradePoint; }
+
+    public double getCreditGrade() { return creditGrade; }
+    public void setCreditGrade(double creditGrade) { this.creditGrade = creditGrade; }
+
+    public int getSemester() { return semester; }
+    public void setSemester(int semester) { this.semester = semester; }
 }

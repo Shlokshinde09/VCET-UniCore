@@ -1,5 +1,6 @@
 package com.college.studentportal.controller;
 import com.college.studentportal.service.AIPredictionService;
+import com.college.studentportal.service.AcademicAnalyticsService;
 
 import com.college.studentportal.model.Result;
 import com.college.studentportal.repository.ResultRepository;
@@ -13,10 +14,14 @@ public class AnalysisController {
 
     private final ResultRepository resultRepository;
     private final AIPredictionService aiPredictionService;
+    private final AcademicAnalyticsService analyticsService;
 
     public AnalysisController(ResultRepository resultRepository,
+                              AcademicAnalyticsService analyticsService,
                               AIPredictionService aiPredictionService) {
+
         this.resultRepository = resultRepository;
+        this.analyticsService = analyticsService;
         this.aiPredictionService = aiPredictionService;
     }
 
@@ -28,7 +33,7 @@ public class AnalysisController {
         Map<Integer, List<Result>> semesterResults = new HashMap<>();
 
         for (Result result : results) {
-            int semester = result.getSubject().getSemester();
+            int semester = result.getSemester();
 
             semesterResults
                     .computeIfAbsent(semester, k -> new ArrayList<>())
@@ -44,7 +49,7 @@ public class AnalysisController {
 
             for (Result r : entry.getValue()) {
                 double grade = r.getGradePoint();
-                int credits = r.getSubject().getCredits();
+                int credits = r.getCredits();
 
                 totalWeightedScore += grade * credits;
                 totalCredits += credits;
@@ -84,7 +89,7 @@ public class AnalysisController {
 
         for (Result result : results) {
             double grade = result.getGradePoint();
-            int credits = result.getSubject().getCredits();
+            int credits = result.getCredits();
 
             totalWeightedScore += grade * credits;
             totalCredits += credits;
@@ -122,48 +127,36 @@ public class AnalysisController {
     }
 
     @GetMapping("/target/{studentId}")
-    public Map<String, Object> calculateTarget(@PathVariable Long studentId) {
+    public Map<String,Object> calculateTarget(@PathVariable Long studentId) throws Exception {
 
-        List<Result> results = resultRepository.findByStudentId(studentId);
+        // Get semester SGPA from analytics service
+        Map<Integer,Double> semesterSgpa =
+                analyticsService.calculateSemesterSGPA(studentId);
 
-        double totalWeightedScore = 0;
-        int totalCredits = 0;
+        List<Double> sgpas = new ArrayList<>(semesterSgpa.values());
 
-        for (Result result : results) {
-            double grade = result.getGradePoint();
-            int credits = result.getSubject().getCredits();
+        // If less semesters exist, fill with average
+        double avg = sgpas.stream()
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(7.0);
 
-            totalWeightedScore += grade * credits;
-            totalCredits += credits;
+        while(sgpas.size() < 7){
+            sgpas.add(avg);
         }
 
-        double currentCGPA = totalCredits == 0 ? 0 : totalWeightedScore / totalCredits;
-        currentCGPA = Math.round(currentCGPA * 100.0) / 100.0;
+        // AI prediction
+        double predictedNextSGPA =
+                aiPredictionService.predictNextSGPA(sgpas);
 
-        double targetCGPA = 8.0;
+        Map<String,Object> response = new HashMap<>();
 
-        int averageSemesterCredits = 20;
-
-        int nextSemesterCredits = averageSemesterCredits;
-
-        double requiredNextSGPA =
-                ((targetCGPA * (totalCredits + nextSemesterCredits)) - totalWeightedScore)
-                        / nextSemesterCredits;
-
-        requiredNextSGPA = Math.round(requiredNextSGPA * 100.0) / 100.0;
-
-        Map<String, Object> response = new HashMap<>();
-
-        response.put("currentCGPA", currentCGPA);
-        response.put("targetCGPA", targetCGPA);
-        response.put("requiredNextSGPA", requiredNextSGPA);
+        response.put("aiTargetSGPA", predictedNextSGPA);
         response.put("message",
-                "Score approximately SGPA " + requiredNextSGPA +
-                        " next semester to reach CGPA " + targetCGPA);
+                "AI predicted achievable SGPA for next semester based on academic trend");
 
         return response;
     }
-
     @GetMapping("/advice/{studentId}")
     public Map<String, Object> getAcademicAdvice(@PathVariable Long studentId) {
 
@@ -177,12 +170,12 @@ public class AnalysisController {
         for (Result result : results) {
 
             double grade = result.getGradePoint();
-            int credits = result.getSubject().getCredits();
+            int credits = result.getCredits();
 
             totalWeightedScore += grade * credits;
             totalCredits += credits;
 
-            int semester = result.getSubject().getSemester();
+            int semester = result.getSemester();
 
             semesterResults
                     .computeIfAbsent(semester, k -> new ArrayList<>())
@@ -199,8 +192,8 @@ public class AnalysisController {
             int semCredits = 0;
 
             for (Result r : entry.getValue()) {
-                semScore += r.getGradePoint() * r.getSubject().getCredits();
-                semCredits += r.getSubject().getCredits();
+                semScore += r.getGradePoint() * r.getCredits();
+                semCredits += r.getCredits();
             }
 
             sgpaList.add(semScore / semCredits);
@@ -254,8 +247,8 @@ public class AnalysisController {
         int totalCredits = 0;
 
         for (Result r : results) {
-            totalWeightedScore += r.getGradePoint() * r.getSubject().getCredits();
-            totalCredits += r.getSubject().getCredits();
+            totalWeightedScore += r.getGradePoint() * r.getCredits();
+            totalCredits += r.getCredits();
         }
 
         double cgpa = totalCredits == 0 ? 0 : totalWeightedScore / totalCredits;
@@ -296,8 +289,8 @@ public class AnalysisController {
         int totalCredits = 0;
 
         for (Result r : results) {
-            totalWeightedScore += r.getGradePoint() * r.getSubject().getCredits();
-            totalCredits += r.getSubject().getCredits();
+            totalWeightedScore += r.getGradePoint() * r.getCredits();
+            totalCredits += r.getCredits();
         }
 
         double cgpa = totalCredits == 0 ? 0 : totalWeightedScore / totalCredits;
@@ -329,6 +322,15 @@ public class AnalysisController {
         // Consistency bonus
         score += 15;
 
+        // Subject level penalty
+        Map<String, List<String>> insights = analyticsService.getSubjectInsights(studentId);
+        int weakCount = insights.containsKey("weak") ? insights.get("weak").size() : 0;
+        if (weakCount > 2) {
+            score -= 10;
+        } else if (weakCount > 0) {
+            score -= 5;
+        }
+
         String level;
 
         if (score >= 80) level = "Highly Competitive";
@@ -353,7 +355,7 @@ public class AnalysisController {
         Map<Integer,List<Result>> semesterResults = new HashMap<>();
 
         for(Result r : results){
-            int sem = r.getSubject().getSemester();
+            int sem = r.getSemester();
 
             semesterResults
                     .computeIfAbsent(sem,k->new ArrayList<>())
@@ -369,8 +371,8 @@ public class AnalysisController {
             int credits = 0;
 
             for(Result r : semResults){
-                weightedScore += r.getGradePoint()*r.getSubject().getCredits();
-                credits += r.getSubject().getCredits();
+                weightedScore += r.getGradePoint()*r.getCredits();
+                credits += r.getCredits();
             }
 
             double sgpa = credits==0?0:weightedScore/credits;
@@ -403,6 +405,214 @@ public class AnalysisController {
         response.put("semesterSGPA",sgpas);
         response.put("predictedFinalCGPA",predicted);
         response.put("message","AI prediction based on real SGPA data");
+
+        return response;
+    }
+
+    @GetMapping("/ai-guidance/{studentId}")
+    public Map<String,Object> getAIGuidance(@PathVariable Long studentId) throws Exception {
+
+        List<Result> results = resultRepository.findByStudentId(studentId);
+
+        double totalWeightedScore = 0;
+        int totalCredits = 0;
+
+        Map<Integer,List<Result>> semesterResults = new HashMap<>();
+
+        for(Result r : results){
+
+            totalWeightedScore += r.getGradePoint()*r.getCredits();
+            totalCredits += r.getCredits();
+
+            int sem = r.getSemester();
+
+            semesterResults
+                    .computeIfAbsent(sem,k->new ArrayList<>())
+                    .add(r);
+        }
+
+        // Current CGPA
+        double cgpa = totalCredits==0?0:totalWeightedScore/totalCredits;
+        cgpa = Math.round(cgpa*100.0)/100.0;
+
+        // Calculate SGPA per semester
+        List<Double> sgpas = new ArrayList<>();
+
+        for(List<Result> semResults : semesterResults.values()){
+
+            double score = 0;
+            int credits = 0;
+
+            for(Result r : semResults){
+                score += r.getGradePoint()*r.getCredits();
+                credits += r.getCredits();
+            }
+
+            sgpas.add(score/credits);
+        }
+
+        // Fill missing semesters with average
+        double avg = sgpas.stream().mapToDouble(Double::doubleValue).average().orElse(7.0);
+
+        while(sgpas.size()<4){
+            sgpas.add(avg);
+        }
+
+        // AI predicted CGPA
+        double predictedCGPA = aiPredictionService.predictCGPA(
+                sgpas.get(0),
+                sgpas.get(1),
+                sgpas.get(2),
+                sgpas.get(3)
+        );
+
+        predictedCGPA = Math.round(predictedCGPA*100.0)/100.0;
+
+        // Placement readiness score
+        int readinessScore = (int)((cgpa/10)*50 + 20 + 10);
+
+        // Placement probability
+        double placementProbability =
+                (cgpa*10*0.4) +
+                        (readinessScore*0.4) +
+                        (predictedCGPA*10*0.2);
+
+        placementProbability = Math.min(100,Math.round(placementProbability));
+
+        // Insight message
+        String insight;
+
+        if(predictedCGPA >= 8){
+            insight = "Excellent trajectory. You are likely to qualify for most service and product companies.";
+        }
+        else if(predictedCGPA >= 7){
+            insight = "Good progress. Maintain SGPA above 8 to unlock more placement opportunities.";
+        }
+        else{
+            insight = "Academic improvement needed. Focus on improving SGPA in upcoming semesters.";
+        }
+
+        Map<String,Object> response = new HashMap<>();
+
+        response.put("currentCGPA",cgpa);
+        response.put("predictedFinalCGPA",predictedCGPA);
+        response.put("readinessScore",readinessScore);
+        response.put("placementProbability",placementProbability);
+        response.put("insight",insight);
+
+        return response;
+    }
+
+    @GetMapping("/dashboard/{studentId}")
+    public Map<String,Object> getDashboard(@PathVariable Long studentId) throws Exception {
+
+        Map<String,Object> response = new HashMap<>();
+
+        // CGPA
+        double cgpa = analyticsService.calculateCGPA(studentId);
+
+        // SGPA per semester
+        Map<Integer,Double> semesterSgpa =
+                analyticsService.calculateSemesterSGPA(studentId);
+
+        // Trend
+        String trend = "Stable";
+
+        if(semesterSgpa.size() >= 2){
+            List<Double> values = new ArrayList<>(semesterSgpa.values());
+
+            double first = values.get(0);
+            double last = values.get(values.size()-1);
+
+            if(last > first) trend = "Improving";
+            else if(last < first) trend = "Declining";
+        }
+
+        // AI predicted CGPA
+        List<Double> sgpas = new ArrayList<>(semesterSgpa.values());
+
+        double avg = sgpas.stream()
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(7.0);
+
+        while(sgpas.size() < 4){
+            sgpas.add(avg);
+        }
+
+        double predictedCGPA =
+                aiPredictionService.predictCGPA(
+                        sgpas.get(0),
+                        sgpas.get(1),
+                        sgpas.get(2),
+                        sgpas.get(3)
+                );
+
+        predictedCGPA = Math.round(predictedCGPA * 100.0) / 100.0;
+
+        // readiness score
+        int readinessScore =
+                (int)((cgpa / 10) * 50 + 20 + 10);
+
+        // placement probability
+        double placementProbability =
+                (cgpa * 10 * 0.4) +
+                        (readinessScore * 0.4) +
+                        (predictedCGPA * 10 * 0.2);
+
+        placementProbability =
+                Math.min(100, Math.round(placementProbability));
+
+        response.put("cgpa", cgpa);
+        response.put("trend", trend);
+        response.put("semesterSgpa", semesterSgpa);
+        response.put("predictedCGPA", predictedCGPA);
+        response.put("readinessScore", readinessScore);
+        response.put("placementProbability", placementProbability);
+
+        return response;
+    }
+
+    @GetMapping("/advisor/{studentId}")
+    public Map<String,Object> academicAdvisor(@PathVariable Long studentId) throws Exception {
+
+        Map<String,Object> dashboard =
+                getDashboard(studentId);
+
+        double cgpa = (double) dashboard.get("cgpa");
+        String trend = (String) dashboard.get("trend");
+        double predicted = (double) dashboard.get("predictedCGPA");
+
+        String advice;
+
+        if(cgpa >= 8){
+            advice = "Excellent performance. Maintain your consistency to stay eligible for most companies.";
+        }
+        else if(cgpa >= 7){
+            advice = "You are close to strong placement eligibility. Aim for SGPA above 8 next semester.";
+        }
+        else{
+            advice = "Your CGPA needs improvement. Focus on scoring SGPA above 8 in upcoming semesters.";
+        }
+
+        if(trend.equals("Improving")){
+            advice += " Your performance trend is improving which is a positive sign.";
+        }
+
+        Map<String, List<String>> subjectInsights = analyticsService.getSubjectInsights(studentId);
+        List<String> weakSubjects = subjectInsights.getOrDefault("weak", new ArrayList<>());
+        if (!weakSubjects.isEmpty()) {
+            advice += " Focus specifically on improving: " + String.join(", ", weakSubjects) + ".";
+        }
+
+        Map<String,Object> response = new HashMap<>();
+
+        response.put("cgpa", cgpa);
+        response.put("trend", trend);
+        response.put("predictedCGPA", predicted);
+        response.put("advice", advice);
+        response.put("strongSubjects", subjectInsights.get("strong"));
+        response.put("weakSubjects", weakSubjects);
 
         return response;
     }

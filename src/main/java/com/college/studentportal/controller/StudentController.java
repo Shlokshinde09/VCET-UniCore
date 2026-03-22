@@ -27,4 +27,10 @@ public class StudentController {
     public List<Student> getAllStudents() {
         return studentRepository.findAll();
     }
+
+    // Delete Student
+    @DeleteMapping("/{id}")
+    public void deleteStudent(@PathVariable Long id) {
+        studentRepository.deleteById(id);
+    }
 }

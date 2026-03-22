@@ -27,4 +27,20 @@ public class SubjectController {
     public List<Subject> getAllSubjects() {
         return subjectRepository.findAll();
     }
+    @PutMapping("/{id}")
+    public Subject updateSubject(@PathVariable Long id, @RequestBody Subject subject) {
+
+        Subject existingSubject = subjectRepository.findById(id).orElseThrow();
+
+        existingSubject.setSubjectName(subject.getSubjectName());
+        existingSubject.setCredits(subject.getCredits());
+        existingSubject.setSemester(subject.getSemester());
+
+        return subjectRepository.save(existingSubject);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteSubject(@PathVariable Long id) {
+        subjectRepository.deleteById(id);
+    }
 }

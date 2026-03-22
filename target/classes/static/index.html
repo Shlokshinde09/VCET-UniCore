@@ -1,180 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Student Academic Dashboard</title>
-
-    <style>
-        body{
-        font-family: Arial;
-        background:#f4f6f9;
-        text-align:center;
-        }
-
-        .container{
-        width:600px;
-        margin:auto;
-        margin-top:40px;
-        background:white;
-        padding:20px;
-        border-radius:10px;
-        box-shadow:0px 0px 10px rgba(0,0,0,0.1);
-        }
-
-        .card{
-        margin:15px;
-        padding:15px;
-        background:#e9f2ff;
-        border-radius:8px;
-        }
-
-        button{
-        padding:10px 20px;
-        background:#007bff;
-        color:white;
-        border:none;
-        border-radius:5px;
-        cursor:pointer;
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Student Academic Analytics & Placement Guidance Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<h1>Student Academic Dashboard</h1>
+    <div class="overlay"></div>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-container">
+                <img src="College_Logo_R-removebg-preview.png" alt="VCET Logo" class="college-logo">
+            </div>
 
-<div class="container">
+            <div class="card-header">
+                <h1>Student Academic Analytics Portal</h1>
+                <p>AI Powered Academic Insights & Placement Guidance</p>
+            </div>
 
-    <div class="card">
-        <h3>Current CGPA</h3>
-        <p id="cgpa">--</p>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="role">Select Role</label>
+                    <select id="role" name="role" required>
+                        <option value="student">Student</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required />
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Login</button>
+                    <button type="button" class="btn-secondary" onclick="forgotPassword()">Forgot Password?</button>
+                </div>
+                
+                <div id="errorMessage" class="error-message"></div>
+            </form>
+        </div>
+        
+        <footer class="login-footer">
+            <p>&copy; Vidyardhini's College of Engineering and Technology</p>
+        </footer>
     </div>
 
-    <div class="card">
-        <h3>Placement Status</h3>
-        <p id="placement">--</p>
-    </div>
-
-    <div class="card">
-        <h3>Target SGPA Next Semester</h3>
-        <p id="target">--</p>
-    </div>
-
-    <div class="card">
-        <h3>SGPA Trend</h3>
-        <canvas id="trendChart"></canvas>
-    </div>
-
-    <div class="card">
-        <h3>Eligible Companies</h3>
-        <p id="companies"></p>
-    </div>
-
-    <div class="card">
-        <h3>Placement Readiness Score</h3>
-        <p id="readiness">--</p>
-    </div>
-
-    <div class="card">
-        <h3>AI Predicted Final CGPA</h3>
-        <p id="aiCgpa">--</p>
-    </div>
-
-    <button onclick="loadData()">Load Student Data</button>
-
-</div>
-
-<script>
-
-    let chart;
-
-    function loadData(){
-
-    //readiness API
-    fetch("http://localhost:8080/analysis/readiness/"+localStorage.getItem("studentId"))
-    .then(res=>res.json())
-    .then(data=>{
-    document.getElementById("readiness").innerText =
-    data.readinessScore + " / 100 (" + data.level + ")";
-    })
-
-    //Placement Eligibility API
-    fetch("http://localhost:8080/analysis/companies/"+localStorage.getItem("studentId"))
-    .then(res=>res.json())
-    .then(data=>{
-    document.getElementById("companies").innerText =
-    data.eligibleCompanies.join(", ");
-    })
-
-    // Placement API
-    fetch("http://localhost:8080/analysis/placement/"+localStorage.getItem("studentId"))
-    .then(res=>res.json())
-    .then(data=>{
-    document.getElementById("cgpa").innerText=data.currentCGPA
-    document.getElementById("placement").innerText=data.placementStatus
-    })
-
-    // Target API
-    fetch("http://localhost:8080/analysis/target/"+localStorage.getItem("studentId"))
-    .then(res=>res.json())
-    .then(data=>{
-    document.getElementById("target").innerText=data.requiredNextSGPA
-    })
-
-    //ai api
-    fetch("http://localhost:8080/analysis/ai-cgpa/"+localStorage.getItem("studentId"))
-    .then(res=>res.json())
-    .then(data=>{
-    document.getElementById("aiCgpa").innerText = data.predictedFinalCGPA
-    })
-
-    // Trend API
-    fetch("http://localhost:8080/analysis/trend/"+localStorage.getItem("studentId"))
-    .then(res=>res.json())
-    .then(data=>{
-
-    let semesters = Object.keys(data.semesterSgpa)
-    let sgpa = Object.values(data.semesterSgpa)
-
-    createChart(semesters, sgpa)
-
-    })
-
-    }
-
-    function createChart(semesters, sgpa){
-
-    const ctx = document.getElementById('trendChart')
-
-    if(chart){
-    chart.destroy()
-    }
-
-    chart = new Chart(ctx,{
-    type:'line',
-    data:{
-    labels:semesters,
-    datasets:[{
-    label:'SGPA',
-    data:sgpa,
-    borderColor:'blue',
-    fill:false
-    }]
-    },
-    options:{
-    scales:{
-    y:{
-    beginAtZero:true,
-    max:10
-    }
-    }
-    }
-    })
-
-    }
-
-</script>
-
+    <script src="script.js"></script>
 </body>
 </html>

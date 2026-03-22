@@ -9,5 +9,5 @@ public interface ResultRepository extends JpaRepository<Result, Long> {
 
     List<Result> findByStudentId(Long studentId);
 
-    List<Result> findByStudentIdAndSubjectSemester(Long studentId, int semester);
+    List<Result> findByStudentIdAndSemester(Long studentId, int semester);
 }

@@ -1,0 +1,14 @@
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/StudentportalApplication.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/controller/AnalysisController.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/controller/AuthController.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/controller/ResultController.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/controller/StudentController.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/controller/SubjectController.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/model/Result.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/model/Student.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/model/Subject.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/repository/ResultRepository.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/repository/StudentRepository.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/repository/SubjectRepository.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/service/AIPredictionService.java
+/Users/chinmaynileshraut/Downloads/studentportal/src/main/java/com/college/studentportal/service/AcademicAnalyticsService.java
