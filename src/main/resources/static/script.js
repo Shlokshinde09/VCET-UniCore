@@ -15,43 +15,52 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const submitBtn = document.querySelector('.btn-primary');
-        const originalText = submitBtn.innerText;
-        submitBtn.innerText = "Authenticating...";
+        const submitBtn = document.getElementById('loginBtn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const btnLoader = submitBtn.querySelector('.btn-loader');
+        btnText.style.display = 'none';
+        btnLoader.style.display = 'inline-flex';
         submitBtn.disabled = true;
+        clearError();
         
         try {
-            if(role === 'student') {
-                // Students authenticate via existing auth controller
-                const response = await fetch(`http://localhost:8080/auth/login?email=${encodeURIComponent(email)}`, {
+            if (role === 'student') {
+                const response = await fetch(`http://localhost:8080/auth/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
                     method: 'POST'
                 });
                 
-                if(!response.ok) {
-                    throw new Error('Authentication failed');
+                if (response.status === 401) {
+                    showError("Invalid email or password. Please try again.");
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Server error');
                 }
                 
                 const studentData = await response.json();
                 
-                if(studentData && studentData.id) {
-                    // Success
+                if (studentData && studentData.id) {
+                    // Success — brief delay for visual feedback
+                    submitBtn.querySelector('.btn-text').textContent = '✓ Success';
+                    btnText.style.display = 'inline';
+                    btnLoader.style.display = 'none';
                     localStorage.setItem('studentId', studentData.id);
-                    // Add a tiny delay for visual smoothness
                     setTimeout(() => {
                         window.location.href = "student-dashboard.html";
-                    }, 400);
+                    }, 600);
                 } else {
-                    showError("Invalid credentials or student not found.");
+                    showError("Invalid credentials. Student not found.");
                 }
             } else if (role === 'admin') {
-                // Basic admin structure validation
-                // Currently bypassing real DB check since admin structure isn't built yet,
-                // but demonstrating the flow.
-                if(email === 'admin@vcet.edu.in' && password === 'admin') {
+                // Admin authentication (hardcoded for now)
+                if (email === 'admin@vcet.edu.in' && password === 'admin') {
+                    btnText.textContent = '✓ Success';
+                    btnText.style.display = 'inline';
+                    btnLoader.style.display = 'none';
                     setTimeout(() => {
-                        // Redirect to admin dashboard
                         window.location.href = "admin-dashboard.html";
-                    }, 500);
+                    }, 600);
                 } else {
                     showError("Invalid administrator credentials.");
                 }
@@ -59,12 +68,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (err) {
             console.error(err);
-            showError("An error occurred connecting to the server.");
+            showError("Could not connect to the server. Is the backend running?");
         } finally {
-            if(role === 'student') {
-                submitBtn.innerText = originalText;
-                submitBtn.disabled = false;
-            }
+            // Reset button state (only if still on page)
+            setTimeout(() => {
+                if (btnText) btnText.textContent = 'Sign In';
+                if (btnText) btnText.style.display = 'inline';
+                if (btnLoader) btnLoader.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = false;
+            }, 700);
         }
     });
 });
@@ -72,15 +84,95 @@ document.addEventListener('DOMContentLoaded', () => {
 function showError(msg) {
     const errorEl = document.getElementById('errorMessage');
     errorEl.innerText = msg;
-    errorEl.style.opacity = 0;
+    errorEl.style.opacity = '0';
     
     // Quick fade in
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         errorEl.style.transition = 'opacity 0.3s ease';
-        errorEl.style.opacity = 1;
-    }, 10);
+        errorEl.style.opacity = '1';
+    });
+
+    // Shake the login card briefly
+    const card = document.getElementById('loginCard');
+    card.style.opacity = '1';
+    card.style.animation = 'none';
+    requestAnimationFrame(() => {
+        card.style.animation = 'cardShake 0.4s ease';
+    });
 }
 
-function forgotPassword() {
-    alert("Password reset instructions have been sent to your registered email or contact the college administration.");
+function clearError() {
+    const errorEl = document.getElementById('errorMessage');
+    errorEl.innerText = '';
+    errorEl.style.opacity = '0';
 }
+
+function togglePasswordVisibility() {
+    const pwInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+    const eyeOffIcon = document.getElementById('eyeOffIcon');
+    
+    if (pwInput.type === 'password') {
+        pwInput.type = 'text';
+        eyeIcon.style.display = 'none';
+        eyeOffIcon.style.display = 'block';
+    } else {
+        pwInput.type = 'password';
+        eyeIcon.style.display = 'block';
+        eyeOffIcon.style.display = 'none';
+    }
+}
+
+function openForgotPasswordModal() {
+    const el = document.getElementById('forgotPasswordModal');
+    if (el) {
+        el.classList.remove('hidden');
+        const inp = document.getElementById('forgotEmail');
+        if (inp) inp.value = document.getElementById('email')?.value?.trim() || '';
+        document.getElementById('forgotPasswordMessage').innerText = '';
+    }
+}
+
+function closeForgotPasswordModal() {
+    const el = document.getElementById('forgotPasswordModal');
+    if (el) el.classList.add('hidden');
+}
+
+async function submitForgotPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('forgotEmail').value.trim();
+    const msgEl = document.getElementById('forgotPasswordMessage');
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.querySelector('.btn-text') && (btn.querySelector('.btn-text').textContent = 'Checking...');
+    
+    try {
+        const response = await fetch(
+            `http://localhost:8080/auth/forgot-password?email=${encodeURIComponent(email)}`,
+            { method: 'POST' }
+        );
+        const data = response.ok ? await response.json() : null;
+        msgEl.style.color = 'var(--text-light, #c8c4b8)';
+        msgEl.innerText = data?.message || 'Could not reach the server. Is the backend running?';
+    } catch (err) {
+        console.error(err);
+        msgEl.style.color = 'var(--accent-red, #e74c3c)';
+        msgEl.innerText = 'Could not reach the server. Ensure the Spring Boot app is running on port 8080.';
+    } finally {
+        btn.disabled = false;
+        if (btn.querySelector('.btn-text')) btn.querySelector('.btn-text').textContent = 'Get Instructions';
+    }
+}
+
+// Add the shake keyframes dynamically
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = `
+    @keyframes cardShake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+    }
+`;
+document.head.appendChild(shakeStyle);

@@ -18,25 +18,30 @@
     <div class="admin-layout">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Elevate Admin</h2>
+            <div class="sidebar-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 2rem;">
+                <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+                    <div style="position: absolute; width: 120%; height: 120%; background: radial-gradient(circle, rgba(201,162,39,0.4) 0%, transparent 65%); filter: blur(8px); z-index: 0; animation: pulseGlow 3s infinite alternate;"></div>
+                    <img src="College_Logo_R-removebg-preview.png" alt="VCET Logo" style="height: 48px; width: auto; object-fit: contain; position: relative; z-index: 1; filter: drop-shadow(0 4px 12px rgba(201,162,39,0.4));">
+                </div>
+                <h2 style="font-size: 1.3rem; margin: 0; line-height: 1.2;">VCET<br><span style="font-size: 0.85rem; color: var(--accent-gold); font-family: 'DM Sans', sans-serif; font-weight: 500;">Admin Panel</span></h2>
             </div>
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" onclick="switchTab('dashboard')">📊 Dashboard</a>
-                <a href="#" class="nav-item" onclick="switchTab('students')">🎓 Manage Students</a>
-                <a href="#" class="nav-item" onclick="switchTab('subjects')">📚 Manage Subjects</a>
-                <a href="#" class="nav-item" onclick="switchTab('results')">📝 Manage Results</a>
-                <a href="admin-result-entry.html" class="nav-item" style="background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue); margin-top:1rem;">📝 MU NEP Result Entry</a>
-                <a href="#" class="nav-item" onclick="switchTab('analytics'); loadAnalytics()">📈 Analytics</a>
-                <a href="#" class="nav-item mt-auto" onclick="logout()">🚪 Logout</a>
+                <a href="#" class="nav-item active" onclick="switchTab('dashboard', this); return false;">Overview</a>
+                <a href="#" class="nav-item" onclick="switchTab('students', this); return false;">Students</a>
+                <a href="#" class="nav-item" onclick="switchTab('subjects', this); return false;">Subjects</a>
+                <a href="#" class="nav-item" onclick="switchTab('results', this); return false;">Results</a>
+                <a href="#" class="nav-item" onclick="switchTab('analytics', this); loadAnalytics(); return false;">Analytics</a>
+                <a href="#" class="nav-item mt-auto" onclick="logout(); return false;">Logout</a>
             </nav>
         </aside>
 
         <!-- Main Content Area -->
         <main class="admin-main">
             <header class="admin-topbar">
-                <h1>Admin Control Panel</h1>
-                <div class="admin-profile">Administrator</div>
+                <h1>Admin Dashboard</h1>
+                <div class="admin-profile" style="display: flex; align-items: center; background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 20px; border: 1px solid rgba(201, 162, 39, 0.2); box-shadow: inset 0 0 10px rgba(201, 162, 39, 0.05);">
+                    <span style="font-size: 1rem; font-weight: 600; color: var(--accent-gold); font-family: 'DM Sans', sans-serif; letter-spacing: 0.03em;">Administrator</span>
+                </div>
             </header>
 
             <div class="admin-content" id="adminContent">
@@ -107,6 +112,7 @@
                                         <th>Email</th>
                                         <th>Dept.</th>
                                         <th>Sem</th>
+                                        <th>CGPA</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -162,10 +168,17 @@
                     </div>
                 </div>
 
-                <!-- TAB: Manage Results -->
+                <!-- TAB: Results -->
                 <div id="tab-results" class="tab-pane hidden">
+                    <div class="card form-card mb-4" style="display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:space-between;">
+                        <div>
+                            <h2 style="margin-bottom:0.25rem;">Result data</h2>
+                            <p style="color: var(--text-muted); font-size:0.9rem; margin:0;">Upload or edit marks via the NEP entry screen.</p>
+                        </div>
+                        <a href="admin-result-entry.html" class="btn-primary" style="text-decoration:none; display:inline-block;">Open MU NEP result entry</a>
+                    </div>
                     <div class="card table-card">
-                        <h2>Recent NEP Uploaded Results</h2>
+                        <h2>Recent uploads</h2>
                         <div class="table-responsive">
                             <table class="data-table">
                                 <thead>
@@ -218,6 +231,47 @@
 
             </div>
         </main>
+    </div>
+
+    <!-- Edit student -->
+    <div id="editStudentModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editStudentTitle" onclick="if(event.target===this)closeEditStudentModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <h2 id="editStudentTitle">Edit student</h2>
+            <form id="editStudentForm" class="admin-form">
+                <input type="hidden" id="editStudId">
+                <div class="form-row">
+                    <div class="form-group"><label>Name</label><input type="text" id="editStudName" required></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="editStudEmail" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Department</label><input type="text" id="editStudDept" required></div>
+                    <div class="form-group"><label>Semester</label><input type="number" id="editStudSem" min="1" max="8" required></div>
+                </div>
+                <div class="form-actions" style="margin-top:1rem;">
+                    <button type="button" class="btn-outline" onclick="closeEditStudentModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit subject -->
+    <div id="editSubjectModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editSubjectTitle" onclick="if(event.target===this)closeEditSubjectModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <h2 id="editSubjectTitle">Edit subject</h2>
+            <form id="editSubjectForm" class="admin-form">
+                <input type="hidden" id="editSubId">
+                <div class="form-row">
+                    <div class="form-group"><label>Subject name</label><input type="text" id="editSubName" required></div>
+                    <div class="form-group"><label>Credits</label><input type="number" id="editSubCredits" min="1" max="6" required></div>
+                    <div class="form-group"><label>Semester</label><input type="number" id="editSubSem" min="1" max="8" required></div>
+                </div>
+                <div class="form-actions" style="margin-top:1rem;">
+                    <button type="button" class="btn-outline" onclick="closeEditSubjectModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="admin-script.js"></script>

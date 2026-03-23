@@ -60,7 +60,7 @@ public class ResultController {
 
     // 🔹 Get results of a student
     @GetMapping("/student/{studentId}")
-    public List<Result> getResultsByStudent(@PathVariable Long studentId) {
+    public List<Result> getResultsByStudent(@PathVariable("studentId") Long studentId) {
         return resultRepository.findByStudentId(studentId);
     }
 
@@ -72,13 +72,13 @@ public class ResultController {
 
     // 🔹 Delete a result by id
     @DeleteMapping("/{id}")
-    public void deleteResult(@PathVariable Long id) {
+    public void deleteResult(@PathVariable("id") Long id) {
         resultRepository.deleteById(id);
     }
 
     // 🔹 Calculate CGPA
     @GetMapping("/cgpa/{studentId}")
-    public double calculateCGPA(@PathVariable Long studentId) {
+    public double calculateCGPA(@PathVariable("studentId") Long studentId) {
         List<Result> results = resultRepository.findByStudentId(studentId);
         double totalCreditGrades = 0;
         int totalCredits = 0;
@@ -94,7 +94,7 @@ public class ResultController {
 
     // 🔹 Calculate SGPA (semester-wise)
     @GetMapping("/sgpa/{studentId}/{semester}")
-    public double calculateSGPA(@PathVariable Long studentId, @PathVariable int semester) {
+    public double calculateSGPA(@PathVariable("studentId") Long studentId, @PathVariable("semester") int semester) {
         List<Result> results = resultRepository.findByStudentIdAndSemester(studentId, semester);
         double totalCreditGrades = 0;
         int totalCredits = 0;

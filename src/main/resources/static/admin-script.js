@@ -2,6 +2,7 @@ const API_BASE_URL = 'http://localhost:8080';
 
 // Global Data
 let studentsList = [];
+let subjectsList = [];
 let adminChartInstance = null;
 
 async function initAdminDashboard() {
@@ -12,20 +13,20 @@ async function initAdminDashboard() {
 }
 
 /** ---------------- TAB NAVIGATION ---------------- **/
-function switchTab(tabId) {
+function switchTab(tabId, navEl) {
     document.querySelectorAll('.tab-pane').forEach(el => {
         el.classList.remove('active');
         el.classList.add('hidden');
     });
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
 
     const target = document.getElementById(`tab-${tabId}`);
-    if(target) {
+    if (target) {
         target.classList.remove('hidden');
         target.classList.add('active');
-        if(event && event.target) {
-            event.target.classList.add('active');
-        }
+    }
+    if (navEl && navEl.classList) {
+        navEl.classList.add('active');
     }
 }
 
@@ -42,7 +43,22 @@ async function loadStudents() {
         const tbody = document.getElementById('adminStudentsTableBody');
         tbody.innerHTML = '';
         
+        const cgpas = [];
+        for (const s of studentsList) {
+            try {
+                const cgpaRes = await fetch(`${API_BASE_URL}/results/cgpa/${s.id}`);
+                if (cgpaRes.ok) {
+                    const cgpaVal = Number(await cgpaRes.json());
+                    cgpas.push({ id: s.id, cgpa: cgpaVal > 0 ? cgpaVal : null });
+                } else cgpas.push({ id: s.id, cgpa: null });
+            } catch (_) {
+                cgpas.push({ id: s.id, cgpa: null });
+            }
+        }
+
         studentsList.forEach(s => {
+            const row = cgpas.find(c => c.id === s.id);
+            const cg = row && row.cgpa != null ? row.cgpa.toFixed(2) : '—';
             tbody.innerHTML += `
                 <tr>
                     <td>${s.id}</td>
@@ -50,35 +66,31 @@ async function loadStudents() {
                     <td>${s.email}</td>
                     <td>${s.department}</td>
                     <td>Sem ${s.semester}</td>
+                    <td style="font-size:0.85rem; color:var(--text-muted);">${cg}</td>
                     <td>
-                        <button class="btn-outline" style="border-color: var(--accent-red); color: var(--accent-red);" onclick="deleteStudent(${s.id})">Delete</button>
+                        <button type="button" class="btn-outline" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openEditStudent(${s.id})">Edit</button>
+                        <button type="button" class="btn-outline" style="border-color: var(--accent-orange); color: var(--accent-orange); padding:4px 8px; font-size:12px; margin-right:4px;" onclick="resetStudentPassword(${s.id})">Reset Pwd</button>
+                        <button type="button" class="btn-outline" style="border-color: var(--accent-red); color: var(--accent-red); padding:4px 8px; font-size:12px;" onclick="deleteStudent(${s.id})">Delete</button>
                     </td>
                 </tr>
             `;
         });
 
-        // Update Dashboard Home KPIs
         document.getElementById('adminTotalStudents').innerText = studentsList.length;
-        
-        // Compute live average CGPA for all students
-        let totalCgpa = 0, validCount = 0;
-        for (const s of studentsList) {
-            try {
-                const cgpaRes = await fetch(`${API_BASE_URL}/results/cgpa/${s.id}`);
-                if (cgpaRes.ok) {
-                    const cgpaVal = await cgpaRes.json();
-                    if (cgpaVal > 0) { totalCgpa += cgpaVal; validCount++; }
-                }
-            } catch(_) {}
+
+        let totalCgpa = 0, validCount = 0, placementReady = 0, atRisk = 0;
+        for (const row of cgpas) {
+            if (row.cgpa != null && row.cgpa > 0) {
+                totalCgpa += row.cgpa;
+                validCount++;
+                if (row.cgpa >= 7) placementReady++;
+                if (row.cgpa < 6.5) atRisk++;
+            }
         }
-        const avgCgpa = validCount > 0 ? (totalCgpa / validCount).toFixed(2) : '--';
+        const avgCgpa = validCount > 0 ? (totalCgpa / validCount).toFixed(2) : '—';
         document.getElementById('adminAvgCgpa').innerText = avgCgpa;
-        
-        const placementReady = validCount > 0 ? Math.round(validCount * ((totalCgpa / validCount) >= 7 ? 0.8 : 0.3)) : 0;
-        document.getElementById('adminPlacementReady').innerText = placementReady;
-        document.getElementById('adminRiskCount').innerText = Math.max(0, studentsList.length - placementReady);
-        
-        renderAdminChart();
+        document.getElementById('adminPlacementReady').innerText = String(placementReady);
+        document.getElementById('adminRiskCount').innerText = String(atRisk);
 
     } catch(err) {
         console.error(err);
@@ -107,9 +119,11 @@ async function addStudent(e) {
 
         if(!response.ok) throw new Error("Failed to add student");
 
-        alert("Student added successfully!");
-        e.target.reset(); // Clear form
-        await loadStudents(); // Refresh table
+        const result = await response.json();
+        const genPw = result.generatedPassword || 'vcet@<id>';
+        alert(`✅ Student added successfully!\n\n📋 Login credentials to share with student:\n   Email: ${studentData.email}\n   Password: ${genPw}\n\nPlease note this password — it won't be shown again.`);
+        e.target.reset();
+        await loadStudents();
     } catch(err) {
         console.error(err);
         alert("Failed to add student. Ensure backend is running.");
@@ -133,6 +147,45 @@ async function deleteStudent(id) {
     } catch(err) {
         console.error(err);
         alert("Failed to delete student. They might have dependent results.");
+    }
+}
+
+function openEditStudent(id) {
+    const s = studentsList.find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('editStudId').value = s.id;
+    document.getElementById('editStudName').value = s.name || '';
+    document.getElementById('editStudEmail').value = s.email || '';
+    document.getElementById('editStudDept').value = s.department || '';
+    document.getElementById('editStudSem').value = s.semester;
+    document.getElementById('editStudentModal').classList.remove('hidden');
+}
+
+function closeEditStudentModal() {
+    document.getElementById('editStudentModal').classList.add('hidden');
+}
+
+async function submitEditStudent(e) {
+    e.preventDefault();
+    const id = document.getElementById('editStudId').value;
+    const body = {
+        name: document.getElementById('editStudName').value.trim(),
+        email: document.getElementById('editStudEmail').value.trim(),
+        department: document.getElementById('editStudDept').value.trim(),
+        semester: parseInt(document.getElementById('editStudSem').value, 10)
+    };
+    try {
+        const response = await fetch(`${API_BASE_URL}/students/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!response.ok) throw new Error('update failed');
+        closeEditStudentModal();
+        await loadStudents();
+    } catch (err) {
+        console.error(err);
+        alert('Could not save student. Check values and try again.');
     }
 }
 
@@ -173,11 +226,11 @@ async function loadSubjects() {
     try {
         const response = await fetch(`${API_BASE_URL}/subjects`);
         if(!response.ok) throw new Error("Failed to load subjects");
-        const subjectsList = await response.json();
-        
+        subjectsList = await response.json();
+
         const tbody = document.getElementById('adminSubjectsTableBody');
         tbody.innerHTML = '';
-        
+
         subjectsList.forEach(sub => {
             tbody.innerHTML += `
                 <tr>
@@ -186,13 +239,51 @@ async function loadSubjects() {
                     <td>${sub.credits}</td>
                     <td>Sem ${sub.semester}</td>
                     <td>
-                        <button class="btn-outline" style="border-color: var(--accent-red); color: var(--accent-red); padding:4px 8px; font-size:12px;" onclick="deleteSubject(${sub.id})">Delete</button>
+                        <button type="button" class="btn-outline" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openEditSubject(${sub.id})">Edit</button>
+                        <button type="button" class="btn-outline" style="border-color: var(--accent-red); color: var(--accent-red); padding:4px 8px; font-size:12px;" onclick="deleteSubject(${sub.id})">Delete</button>
                     </td>
                 </tr>
             `;
         });
     } catch(err) {
         console.error(err);
+    }
+}
+
+function openEditSubject(id) {
+    const sub = subjectsList.find(x => x.id === id);
+    if (!sub) return;
+    document.getElementById('editSubId').value = sub.id;
+    document.getElementById('editSubName').value = sub.subjectName || '';
+    document.getElementById('editSubCredits').value = sub.credits;
+    document.getElementById('editSubSem').value = sub.semester;
+    document.getElementById('editSubjectModal').classList.remove('hidden');
+}
+
+function closeEditSubjectModal() {
+    document.getElementById('editSubjectModal').classList.add('hidden');
+}
+
+async function submitEditSubject(e) {
+    e.preventDefault();
+    const id = document.getElementById('editSubId').value;
+    const body = {
+        subjectName: document.getElementById('editSubName').value.trim(),
+        credits: parseInt(document.getElementById('editSubCredits').value, 10),
+        semester: parseInt(document.getElementById('editSubSem').value, 10)
+    };
+    try {
+        const response = await fetch(`${API_BASE_URL}/subjects/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!response.ok) throw new Error('update failed');
+        closeEditSubjectModal();
+        await loadSubjects();
+    } catch (err) {
+        console.error(err);
+        alert('Could not save subject.');
     }
 }
 
@@ -214,41 +305,7 @@ async function deleteSubject(id) {
     }
 }
 
-/** ---------------- RESULT MANAGEMENT ---------------- **/
-
-async function uploadResult(e) {
-    e.preventDefault();
-    const btn = e.target.querySelector('button[type="submit"]');
-    btn.disabled = true;
-
-    const studentId = document.getElementById('resStudentId').value;
-    const subjectId = document.getElementById('resSubjectId').value;
-    const gradePoint = document.getElementById('resGrade').value;
-
-    try {
-        // ResultController expects RequestParams for POST /results
-        const params = new URLSearchParams({
-            studentId,
-            subjectId,
-            gradePoint
-        });
-
-        const response = await fetch(`${API_BASE_URL}/results?${params.toString()}`, {
-            method: 'POST'
-        });
-
-        if(!response.ok) throw new Error("Failed to upload result");
-
-        alert("Grade uploaded successfully!");
-        e.target.reset();
-        await loadResults(); // Refresh
-    } catch(err) {
-        console.error(err);
-        alert("Failed to upload result. Ensure the Student ID and Subject ID exist.");
-    } finally {
-        btn.disabled = false;
-    }
-}
+/** ---------------- RESULT LIST (uploads use admin-result-entry.html) ---------------- **/
 
 async function loadResults() {
     try {
@@ -290,7 +347,13 @@ async function loadResults() {
 function hookupAdminForms() {
     document.getElementById('addStudentForm').addEventListener('submit', addStudent);
     document.getElementById('addSubjectForm').addEventListener('submit', addSubject);
-    document.getElementById('addResultForm').addEventListener('submit', uploadResult);
+    document.getElementById('editStudentForm').addEventListener('submit', submitEditStudent);
+    document.getElementById('editSubjectForm').addEventListener('submit', submitEditSubject);
+}
+
+function openStudentPreview(studentId) {
+    localStorage.setItem('studentId', String(studentId));
+    window.open('student-dashboard.html', '_blank');
 }
 
 function logout() {
@@ -333,7 +396,7 @@ async function loadAnalytics() {
 
         const rankEmoji = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
         tbody.innerHTML += `
-            <tr style="cursor:pointer;" onclick="window.open('student-dashboard.html','_blank')">
+            <tr style="cursor:pointer;" onclick="openStudentPreview(${s.id})">
                 <td><strong>${rankEmoji}</strong></td>
                 <td><strong>${s.name}</strong></td>
                 <td>${s.department}</td>
@@ -381,3 +444,17 @@ async function loadAnalytics() {
         }
     });
 }
+
+async function resetStudentPassword(id) {
+    if (!confirm(`Reset password for Student ID: ${id} back to the default?`)) return;
+    try {
+        const response = await fetch(`${API_BASE_URL}/students/${id}/reset-password`, { method: 'POST' });
+        if (!response.ok) throw new Error('reset failed');
+        const data = await response.json();
+        alert(`🔒 Password reset successful!\n\nNew password: ${data.newPassword}\n\nPlease share this with the student.`);
+    } catch (err) {
+        console.error(err);
+        alert('Could not reset password. Check that the student exists and backend is running.');
+    }
+}
+

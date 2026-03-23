@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Student Dashboard - Project Elevate</title>
+    <title>Student Dashboard - VCET</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,13 +16,20 @@
     <div class="background-glow"></div>
 
     <header class="dashboard-header">
-        <div class="logo-area">
-            <h1>Project Elevate</h1>
-            <span class="role-badge">Student Portal</span>
+        <div class="logo-area" style="display: flex; align-items: center; gap: 16px;">
+            <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+                <div style="position: absolute; width: 120%; height: 120%; background: radial-gradient(circle, rgba(201,162,39,0.35) 0%, transparent 65%); filter: blur(8px); z-index: 0; animation: pulseGlow 3s infinite alternate;"></div>
+                <img src="College_Logo_R-removebg-preview.png" alt="VCET Logo" style="height: 52px; width: auto; object-fit: contain; position: relative; z-index: 1; filter: drop-shadow(0 4px 12px rgba(201,162,39,0.4));">
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 1.5rem;">Student Dashboard</h1>
+                <span class="role-badge" style="display: inline-block; margin-top: 4px;">VCET Portal</span>
+            </div>
         </div>
         <div class="user-actions">
             <span id="studentName">Welcome, Student</span>
             <a href="result-page.html" class="btn-primary" style="text-decoration:none; padding: 0.6rem 1.2rem; background:#10b981; border:none; border-radius:8px; color:white; font-size:0.9rem; margin-right: 0.5rem;">View Official MU Marksheet</a>
+            <button class="btn-outline" onclick="openChangePasswordModal()" style="margin-right: 0.5rem;">Change Password</button>
             <button class="btn-outline" onclick="logout()">Logout</button>
         </div>
     </header>
@@ -132,6 +139,23 @@
             </div>
         </div>
     </main>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="changePasswordTitle" onclick="if(event.target===this)closeChangePasswordModal()">
+        <div class="modal-card" style="max-width: 400px; padding: 2rem;" onclick="event.stopPropagation()">
+            <h2 id="changePasswordTitle" style="margin-bottom: 1.5rem; font-size: 1.25rem;">Change Password</h2>
+            <form id="changePasswordForm" class="admin-form" onsubmit="submitChangePassword(event)">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label>New Password</label>
+                    <input type="password" id="newPassword" required style="width: 100%;">
+                </div>
+                <div class="form-actions" style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn-outline" onclick="closeChangePasswordModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="dashboard.js?v=2"></script>
     <script>

@@ -2,7 +2,6 @@ const API_BASE_URL = 'http://localhost:8080';
 
 // Global Chart instances
 let trendChartInstance = null;
-let adminChartInstance = null;
 
 // Ensure we have a student ID
 const studentId = localStorage.getItem('studentId') || 1; // Default to 1 for demo if missing
@@ -120,81 +119,6 @@ async function initStudentDashboard() {
     }
 }
 
-/** ---------------- ADMIN DASHBOARD ---------------- **/
-async function initAdminDashboard() {
-    try {
-        // Fetch admin data (Assuming /students returns list of students)
-        const students = await fetchData('/students');
-        
-        if (Array.isArray(students)) {
-            document.getElementById('adminTotalStudents').innerText = students.length;
-            
-            // Populate student roster table
-            const tbody = document.getElementById('adminStudentsTableBody');
-            tbody.innerHTML = '';
-            students.forEach(s => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${s.id}</td>
-                        <td><strong>${s.name}</strong></td>
-                        <td>${s.email}</td>
-                        <td>${s.department}</td>
-                        <td>Sem ${s.semester}</td>
-                        <td>
-                            <button class="btn-outline" style="padding:4px 8px; font-size:12px;">Edit</button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            // Mocking aggregated data since no explicit analytics API exists yet on backend
-            document.getElementById('adminAvgCgpa').innerText = '7.45';
-            document.getElementById('adminPlacementReady').innerText = Math.floor(students.length * 0.45);
-            document.getElementById('adminRiskCount').innerText = Math.floor(students.length * 0.15);
-            
-            renderAdminChart();
-            
-            // Wiring up forms for future backend implementation
-            hookupAdminForms();
-        }
-    } catch(err) {
-        console.error("Admin Load Error:", err);
-    }
-}
-
-function switchTab(tabId) {
-    // Hide all tabs
-    document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
-    
-    // Remove active from nav links
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-    // Show target tab
-    const target = document.getElementById(`tab-${tabId}`);
-    if(target) {
-        target.classList.remove('hidden');
-        target.classList.add('active');
-        
-        // Highlight nav item
-        const navEvent = event ? event.target : document.querySelector('.nav-item');
-        if(navEvent && navEvent.classList) navEvent.classList.add('active');
-    }
-}
-
-function hookupAdminForms() {
-    // These intercept forms and would conceptually do POST fetch() calls
-    document.getElementById('addStudentForm')?.addEventListener('submit', (e) => {
-        e.preventDefault(); alert('Student Add API connection pending.'); e.target.reset();
-    });
-    document.getElementById('addSubjectForm')?.addEventListener('submit', (e) => {
-        e.preventDefault(); alert('Subject Add API connection pending.'); e.target.reset();
-    });
-    document.getElementById('addResultForm')?.addEventListener('submit', (e) => {
-        e.preventDefault(); alert('Result Upload API connection pending.'); e.target.reset();
-    });
-}
-
 /** ---------------- UTILITIES & CHARTS ---------------- **/
 
 async function fetchData(endpoint) {
@@ -262,30 +186,36 @@ function renderStudentChart(labels, data) {
     });
 }
 
-function renderAdminChart() {
-    const ctx = document.getElementById('adminDeptChart');
-    if (!ctx) return;
-    if(adminChartInstance) adminChartInstance.destroy();
+/** ---------------- CHANGE PASSWORD ---------------- **/
+function openChangePasswordModal() {
+    document.getElementById('changePasswordModal').classList.remove('hidden');
+    document.getElementById('newPassword').value = '';
+}
+
+function closeChangePasswordModal() {
+    document.getElementById('changePasswordModal').classList.add('hidden');
+}
+
+async function submitChangePassword(event) {
+    event.preventDefault();
+    const newPassword = document.getElementById('newPassword').value;
     
-    adminChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Computer', 'IT', 'EXTC', 'Mechanical'],
-            datasets: [{
-                label: 'Average CGPA',
-                data: [7.8, 7.5, 7.1, 6.9],
-                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.05)' } },
-                x: { grid: { display: false } }
-            }
+    try {
+        const response = await fetch(`${API_BASE_URL}/students/${studentId}/change-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newPassword })
+        });
+        
+        if (response.ok) {
+            alert('Password changed successfully!');
+            closeChangePasswordModal();
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to change password');
         }
-    });
+    } catch (error) {
+        console.error("Change Password Error:", error);
+        alert('An error occurred while changing the password.');
+    }
 }

@@ -1,5 +1,7 @@
 package com.college.studentportal.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 @Entity
@@ -14,6 +16,7 @@ public class Student {
     private String email;
     private String department;
     private int semester;
+    private String password;
 
     public Student() {}
 
@@ -37,4 +40,10 @@ public class Student {
 
     public int getSemester() { return semester; }
     public void setSemester(int semester) { this.semester = semester; }
+
+    @JsonIgnore
+    public String getPassword() { return password; }
+
+    @JsonProperty
+    public void setPassword(String password) { this.password = password; }
 }
