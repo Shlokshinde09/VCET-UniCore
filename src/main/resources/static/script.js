@@ -53,17 +53,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     showError("Invalid credentials. Student not found.");
                 }
             } else if (role === 'admin') {
-                // Admin authentication (hardcoded for now)
-                if (email === 'admin@vcet.edu.in' && password === 'admin') {
-                    btnText.textContent = '✓ Success';
-                    btnText.style.display = 'inline';
-                    btnLoader.style.display = 'none';
-                    setTimeout(() => {
-                        window.location.href = "admin-dashboard.html";
-                    }, 600);
-                } else {
+                const response = await fetch(`http://localhost:8080/auth/admin-login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
+                    method: 'POST'
+                });
+                
+                if (response.status === 401) {
                     showError("Invalid administrator credentials.");
+                    return;
                 }
+                
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+                
+                btnText.textContent = '✓ Success';
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+                setTimeout(() => {
+                    window.location.href = "admin-dashboard.html";
+                }, 600);
             }
             
         } catch (err) {
@@ -176,3 +184,64 @@ shakeStyle.textContent = `
     }
 `;
 document.head.appendChild(shakeStyle);
+
+// Claim Account Modal Logic
+function openClaimAccountModal() {
+    document.getElementById('claimAccountModal').classList.remove('hidden');
+    document.getElementById('claimAccountMessage').textContent = '';
+    document.getElementById('claimAccountMessage').className = 'forgot-message';
+    document.getElementById('claimAccountForm').reset();
+}
+
+function closeClaimAccountModal() {
+    document.getElementById('claimAccountModal').classList.add('hidden');
+}
+
+async function submitClaimAccount(e) {
+    e.preventDefault();
+    const claimToken = document.getElementById('claimToken').value;
+    const email = document.getElementById('claimEmail').value;
+    const newPassword = document.getElementById('claimPassword').value;
+    
+    const msgElement = document.getElementById('claimAccountMessage');
+    const claimBtnText = document.getElementById('claimBtnText');
+    const claimBtnLoader = document.getElementById('claimBtnLoader');
+    
+    // UI Loading state
+    claimBtnText.style.display = 'none';
+    claimBtnLoader.style.display = 'inline';
+    msgElement.className = 'forgot-message';
+    msgElement.textContent = 'Processing...';
+
+    try {
+        const response = await fetch(`http://localhost:8080/auth/claim-account`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ claimToken, email, newPassword })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            msgElement.style.color = '#10b981'; // Success green
+            msgElement.textContent = '✅ ' + data.message;
+            setTimeout(() => {
+                closeClaimAccountModal();
+                document.getElementById('email').value = email;
+                document.getElementById('password').focus();
+            }, 2500);
+        } else {
+            msgElement.style.color = '#ef4444'; // Error red
+            msgElement.textContent = '❌ ' + (data.error || 'Failed to claim account.');
+        }
+    } catch (err) {
+        console.error('Claim account error:', err);
+        msgElement.style.color = '#ef4444';
+        msgElement.textContent = '❌ Could not connect to the server.';
+    } finally {
+        claimBtnText.style.display = 'inline';
+        claimBtnLoader.style.display = 'none';
+    }
+}

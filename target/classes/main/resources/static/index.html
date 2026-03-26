@@ -88,6 +88,7 @@
                 <div id="errorMessage" class="error-message"></div>
 
                 <div class="help-link-row">
+                    <button type="button" class="link-btn" onclick="openClaimAccountModal()" style="color: var(--accent); font-weight: 600;">First Time Login? Claim Account</button>
                     <button type="button" class="link-btn" onclick="openForgotPasswordModal()">Forgot your password?</button>
                 </div>
             </form>
@@ -126,6 +127,45 @@
                 <p id="forgotPasswordMessage" class="forgot-message"></p>
                 <div class="form-actions modal-actions">
                     <button type="submit" class="btn-login">Get Instructions</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Claim Account Modal -->
+    <div id="claimAccountModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="claimModalTitle" onclick="if(event.target===this)closeClaimAccountModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="claimModalTitle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+                    Claim Account
+                </h2>
+                <button type="button" class="modal-close" onclick="closeClaimAccountModal()" aria-label="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <p class="modal-note">Set up your secure password using the 8-character Claim Code sent by your administrator.</p>
+            <form id="claimAccountForm" onsubmit="submitClaimAccount(event)">
+                <div class="form-group">
+                    <label for="claimToken">Claim Code</label>
+                    <input type="text" id="claimToken" required placeholder="E.g., A72B9X3K" />
+                </div>
+                <div class="form-group">
+                    <label for="claimEmail">Registered Email</label>
+                    <input type="email" id="claimEmail" required placeholder="you@vcet.edu.in" />
+                </div>
+                <div class="form-group">
+                    <label for="claimPassword">Create New Password</label>
+                    <input type="password" id="claimPassword" required placeholder="Minimum 6 characters" minlength="6" />
+                </div>
+                <p id="claimAccountMessage" class="forgot-message"></p>
+                <div class="form-actions modal-actions">
+                    <button type="submit" class="btn-login" id="claimBtn">
+                        <span class="btn-text" id="claimBtnText">Secure Account</span>
+                        <span class="btn-loader" id="claimBtnLoader" style="display:none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"><animate attributeName="stroke-dashoffset" from="32" to="0" dur="1s" repeatCount="indefinite"/></circle></svg>
+                        </span>
+                    </button>
                 </div>
             </form>
         </div>

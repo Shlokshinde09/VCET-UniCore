@@ -120,8 +120,7 @@ async function addStudent(e) {
         if(!response.ok) throw new Error("Failed to add student");
 
         const result = await response.json();
-        const genPw = result.generatedPassword || 'vcet@<id>';
-        alert(`✅ Student added successfully!\n\n📋 Login credentials to share with student:\n   Email: ${studentData.email}\n   Password: ${genPw}\n\nPlease note this password — it won't be shown again.`);
+        alert(`✅ Student added successfully!\n\nThe account is unclaimed. Please privately send the student their registered email and this unique 8-character Claim Code to set up their password:\n\nCLAIM CODE: ${result.claimToken}`);
         e.target.reset();
         await loadStudents();
     } catch(err) {
@@ -451,7 +450,7 @@ async function resetStudentPassword(id) {
         const response = await fetch(`${API_BASE_URL}/students/${id}/reset-password`, { method: 'POST' });
         if (!response.ok) throw new Error('reset failed');
         const data = await response.json();
-        alert(`🔒 Password reset successful!\n\nNew password: ${data.newPassword}\n\nPlease share this with the student.`);
+        alert(`🔒 Password reset successful!\n\nThe account is now unclaimed again. Please send the student this new Claim Code to re-claim their account:\n\nCLAIM CODE: ${data.claimToken}`);
     } catch (err) {
         console.error(err);
         alert('Could not reset password. Check that the student exists and backend is running.');

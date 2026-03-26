@@ -2,46 +2,44 @@ package com.college.studentportal.controller;
 
 import com.college.studentportal.model.Student;
 import com.college.studentportal.repository.StudentRepository;
+import com.college.studentportal.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/students")
 public class StudentController {
 
     private final StudentRepository studentRepository;
+    private final AuthService authService;
 
-    public StudentController(StudentRepository studentRepository) {
+    public StudentController(StudentRepository studentRepository, AuthService authService) {
         this.studentRepository = studentRepository;
+        this.authService = authService;
     }
 
     /**
-     * Admin creates a new student. A default password is auto-generated
-     * after save (vcet@<id>) and returned in the response so admin can
-     * distribute it to the student.
+     * Admin creates a new student.
+     * Account is created in an "unclaimed" state (password remains null).
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createStudent(@RequestBody Student student) {
-        // First save without password to get the auto-generated id
+        student.setPassword("");
+        String token = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        student.setClaimToken(token);
         Student saved = studentRepository.save(student);
 
-        // Generate default password based on the student's id
-        String defaultPassword = "vcet@" + saved.getId();
-        saved.setPassword(defaultPassword);
-        studentRepository.save(saved);
-
-        // Return student info + the generated password (one-time visibility for admin)
         return ResponseEntity.ok(Map.of(
                 "student", saved,
-                "generatedPassword", defaultPassword,
-                "message", "Student created successfully. Default password: " + defaultPassword
-        ));
+                "claimToken", token,
+                "message",
+                "Student created successfully. The account is unclaimed. The student must use the Account Claim portal with the Claim Code to set their password."));
     }
 
-    // Get All Students
     @GetMapping
     public List<Student> getAllStudents() {
         return studentRepository.findAll();
@@ -61,19 +59,20 @@ public class StudentController {
     }
 
     /**
-     * Admin resets a student's password back to the default (vcet@<id>).
+     * Admin resets a student's password by nullifying it, forcing another 'Account
+     * Claim'.
      */
     @PostMapping("/{id}/reset-password")
-    public ResponseEntity<Map<String, String>> resetPassword(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> resetPassword(@PathVariable Long id) {
         return studentRepository.findById(id)
                 .map(student -> {
-                    String defaultPassword = "vcet@" + student.getId();
-                    student.setPassword(defaultPassword);
+                    student.setPassword("");
+                    String token = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                    student.setClaimToken(token);
                     studentRepository.save(student);
                     return ResponseEntity.ok(Map.of(
-                            "message", "Password reset successful. New password: " + defaultPassword,
-                            "newPassword", defaultPassword
-                    ));
+                            "claimToken", (Object) token,
+                            "message", (Object) ("Password reset successfully. New Claim Code: " + token)));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -82,21 +81,21 @@ public class StudentController {
      * Student changes their own password.
      */
     @PostMapping("/{id}/change-password")
-    public ResponseEntity<Map<String, String>> changePassword(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<Map<String, String>> changePassword(@PathVariable Long id,
+            @RequestBody Map<String, String> payload) {
         String newPassword = payload.get("newPassword");
         if (newPassword == null || newPassword.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Password cannot be empty."));
         }
         return studentRepository.findById(id)
                 .map(student -> {
-                    student.setPassword(newPassword);
+                    student.setPassword(authService.hashPassword(newPassword));
                     studentRepository.save(student);
                     return ResponseEntity.ok(Map.of("message", "Password changed successfully."));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Delete Student
     @DeleteMapping("/{id}")
     public void deleteStudent(@PathVariable Long id) {
         studentRepository.deleteById(id);

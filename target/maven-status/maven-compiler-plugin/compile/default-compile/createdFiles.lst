@@ -4,11 +4,15 @@ com/college/studentportal/controller/AuthController.class
 com/college/studentportal/controller/StudentController.class
 com/college/studentportal/repository/ResultRepository.class
 com/college/studentportal/controller/ResultController.class
+com/college/studentportal/config/AdminSeeder.class
 com/college/studentportal/repository/SubjectRepository.class
 com/college/studentportal/model/Student.class
 com/college/studentportal/controller/AnalysisController.class
+com/college/studentportal/repository/AdminRepository.class
 com/college/studentportal/StudentportalApplication.class
 com/college/studentportal/controller/SubjectController.class
+com/college/studentportal/model/Admin.class
 com/college/studentportal/repository/StudentRepository.class
+com/college/studentportal/service/AuthService.class
 com/college/studentportal/model/Subject.class
 com/college/studentportal/service/AcademicAnalyticsService.class
