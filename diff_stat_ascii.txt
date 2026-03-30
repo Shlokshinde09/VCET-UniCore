@@ -1,0 +1,36 @@
+ .../controller/AttendanceController.java           | 163 --------------------
+ .../college/studentportal/model/Attendance.java    |  50 -------
+ .../repository/AttendanceRepository.java           |  19 ---
+ src/main/resources/static/admin-dashboard.html     | 123 +++------------
+ src/main/resources/static/admin-script.js          | 165 ---------------------
+ src/main/resources/static/dashboard.js             |  55 -------
+ src/main/resources/static/student-dashboard.html   |  27 ----
+ src/main/resources/static/styles.css               |  59 --------
+ .../studentportal/StudentportalApplication.class   | Bin 778 -> 778 bytes
+ .../college/studentportal/config/AdminSeeder.class | Bin 2878 -> 2872 bytes
+ .../controller/AnalysisController.class            | Bin 18764 -> 18272 bytes
+ .../controller/AttendanceController.class          | Bin 9927 -> 0 bytes
+ .../studentportal/controller/AuthController.class  | Bin 6890 -> 6911 bytes
+ .../controller/ResultController.class              | Bin 6065 -> 6032 bytes
+ .../controller/StudentController.class             | Bin 7820 -> 7847 bytes
+ .../controller/SubjectController.class             | Bin 2712 -> 2712 bytes
+ .../com/college/studentportal/model/Admin.class    | Bin 1512 -> 1512 bytes
+ .../college/studentportal/model/Attendance.class   | Bin 2469 -> 0 bytes
+ .../com/college/studentportal/model/Result.class   | Bin 3336 -> 3336 bytes
+ .../com/college/studentportal/model/Student.class  | Bin 2723 -> 2723 bytes
+ .../com/college/studentportal/model/Subject.class  | Bin 1600 -> 1600 bytes
+ .../studentportal/repository/AdminRepository.class | Bin 643 -> 643 bytes
+ .../repository/AttendanceRepository.class          | Bin 1297 -> 0 bytes
+ .../repository/ResultRepository.class              | Bin 746 -> 746 bytes
+ .../repository/StudentRepository.class             | Bin 565 -> 565 bytes
+ .../repository/SubjectRepository.class             | Bin 368 -> 368 bytes
+ .../service/AIPredictionService.class              | Bin 8462 -> 8372 bytes
+ .../service/AcademicAnalyticsService.class         | Bin 5101 -> 5006 bytes
+ .../studentportal/service/AuthService.class        | Bin 1222 -> 1222 bytes
+ target/classes/static/admin-dashboard.html         | 123 +++------------
+ target/classes/static/admin-script.js              | 165 ---------------------
+ target/classes/static/dashboard.js                 |  55 -------
+ target/classes/static/student-dashboard.html       |  27 ----
+ target/classes/static/styles.css                   |  59 --------
+ .../compile/default-compile/inputFiles.lst         |  39 +++--
+ 35 files changed, 58 insertions(+), 1071 deletions(-)
