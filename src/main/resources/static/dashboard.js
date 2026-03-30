@@ -112,10 +112,65 @@ async function initStudentDashboard() {
         // Reveal dashboard smoothly
         document.getElementById('dashboardContent').style.opacity = 1;
 
+        // Load attendance summary
+        await loadAttendanceSummary(studentId);
+
     } catch (error) {
         console.error("Dashboard Init Error:", error);
         alert("Could not load some dashboard data. Is the backend running?");
         document.getElementById('dashboardContent').style.opacity = 1;
+    }
+}
+
+/** ---------------- ATTENDANCE SUMMARY ---------------- **/
+
+async function loadAttendanceSummary(studentId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/attendance/student/${studentId}/summary`);
+        if (!response.ok) return;
+
+        const summaries = await response.json();
+        if (!summaries || summaries.length === 0) return;
+
+        const card = document.getElementById('attendanceSummaryCard');
+        const tbody = document.getElementById('attendanceSummaryBody');
+        const overallBadge = document.getElementById('overallAttendanceBadge');
+
+        card.style.display = 'block';
+        tbody.innerHTML = '';
+
+        let totalClasses = 0, totalPresent = 0;
+
+        summaries.forEach(s => {
+            totalClasses += s.totalClasses;
+            totalPresent += s.present;
+
+            let badgeClass = 'att-present';
+            if (s.percentage < 60) badgeClass = 'att-absent';
+            else if (s.percentage < 75) badgeClass = 'att-warning';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${s.subjectName}</strong></td>
+                    <td>${s.totalClasses}</td>
+                    <td>${s.present}</td>
+                    <td>${s.absent}</td>
+                    <td><span class="attendance-badge ${badgeClass}">${s.percentage}%</span></td>
+                </tr>
+            `;
+        });
+
+        // Overall attendance
+        const overallPct = totalClasses > 0 ? Math.round((totalPresent * 100.0 / totalClasses) * 10) / 10 : 0;
+        let overallClass = 'att-present';
+        if (overallPct < 60) overallClass = 'att-absent';
+        else if (overallPct < 75) overallClass = 'att-warning';
+
+        overallBadge.className = `attendance-badge ${overallClass}`;
+        overallBadge.innerText = `${overallPct}%`;
+
+    } catch (err) {
+        console.warn('Could not load attendance summary:', err);
     }
 }
 

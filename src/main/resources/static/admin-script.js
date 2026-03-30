@@ -457,3 +457,168 @@ async function resetStudentPassword(id) {
     }
 }
 
+/** ---------------- ATTENDANCE MANAGEMENT ---------------- **/
+
+// Tracks attendance status for each student in the current sheet
+let attendanceRecords = {};
+
+function loadAttendanceTab() {
+    const select = document.getElementById('attendanceSubjectSelect');
+    // Populate with already-loaded subjectsList
+    select.innerHTML = '<option value="">-- Select Subject --</option>';
+    subjectsList.forEach(sub => {
+        select.innerHTML += `<option value="${sub.id}" data-semester="${sub.semester}">${sub.subjectName} (Sem ${sub.semester})</option>`;
+    });
+
+    // Set date to today
+    const dateInput = document.getElementById('attendanceDateInput');
+    if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+}
+
+async function loadAttendanceSheet() {
+    const subjectId = document.getElementById('attendanceSubjectSelect').value;
+    const date = document.getElementById('attendanceDateInput').value;
+    const card = document.getElementById('attendanceSheetCard');
+    const btn = document.getElementById('submitAttendanceBtn');
+
+    if (!subjectId || !date) {
+        card.style.display = 'none';
+        btn.disabled = true;
+        return;
+    }
+
+    // Find subject to get its semester
+    const subject = subjectsList.find(s => s.id == subjectId);
+    if (!subject) return;
+
+    // Filter students by that semester
+    const semesterStudents = studentsList.filter(s => s.semester === subject.semester);
+
+    // Fetch existing attendance for this subject+date
+    let existingRecords = [];
+    try {
+        const res = await fetch(`${API_BASE_URL}/attendance/subject/${subjectId}/date/${date}`);
+        if (res.ok) existingRecords = await res.json();
+    } catch (e) {
+        console.warn('Could not fetch existing attendance:', e);
+    }
+
+    // Build a map of existing records: studentId -> status
+    const existingMap = {};
+    existingRecords.forEach(r => {
+        if (r.student) existingMap[r.student.id] = r.status;
+    });
+
+    // Initialize attendance records: default to PRESENT, override with existing
+    attendanceRecords = {};
+    semesterStudents.forEach(s => {
+        attendanceRecords[s.id] = existingMap[s.id] || 'PRESENT';
+    });
+
+    // Render table
+    const tbody = document.getElementById('attendanceTableBody');
+    tbody.innerHTML = '';
+
+    if (semesterStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:1rem; color:var(--text-muted);">No students found for Semester ' + subject.semester + '</td></tr>';
+        card.style.display = 'block';
+        btn.disabled = true;
+        return;
+    }
+
+    semesterStudents.forEach(s => {
+        const status = attendanceRecords[s.id];
+        const isPresent = status === 'PRESENT';
+        tbody.innerHTML += `
+            <tr id="att-row-${s.id}">
+                <td>${s.id}</td>
+                <td><strong>${s.name}</strong></td>
+                <td>${s.department}</td>
+                <td>
+                    <span class="attendance-badge ${isPresent ? 'att-present' : 'att-absent'}" id="att-badge-${s.id}">
+                        ${isPresent ? '✅ Present' : '❌ Absent'}
+                    </span>
+                </td>
+                <td>
+                    <button type="button" class="btn-outline att-toggle-btn" onclick="toggleAttendance(${s.id})" style="padding:4px 12px; font-size:12px;">
+                        Toggle
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById('attendanceSheetTitle').innerText =
+        `📋 ${subject.subjectName} — ${new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    card.style.display = 'block';
+    btn.disabled = false;
+}
+
+function toggleAttendance(studentId) {
+    const current = attendanceRecords[studentId];
+    const newStatus = current === 'PRESENT' ? 'ABSENT' : 'PRESENT';
+    attendanceRecords[studentId] = newStatus;
+
+    const badge = document.getElementById(`att-badge-${studentId}`);
+    if (badge) {
+        badge.className = `attendance-badge ${newStatus === 'PRESENT' ? 'att-present' : 'att-absent'}`;
+        badge.innerText = newStatus === 'PRESENT' ? '✅ Present' : '❌ Absent';
+    }
+}
+
+function markAllAttendance(status) {
+    for (const studentId in attendanceRecords) {
+        attendanceRecords[studentId] = status;
+        const badge = document.getElementById(`att-badge-${studentId}`);
+        if (badge) {
+            badge.className = `attendance-badge ${status === 'PRESENT' ? 'att-present' : 'att-absent'}`;
+            badge.innerText = status === 'PRESENT' ? '✅ Present' : '❌ Absent';
+        }
+    }
+}
+
+async function submitBulkAttendance() {
+    const subjectId = document.getElementById('attendanceSubjectSelect').value;
+    const date = document.getElementById('attendanceDateInput').value;
+
+    if (!subjectId || !date) {
+        alert('Please select a subject and date first.');
+        return;
+    }
+
+    const records = Object.entries(attendanceRecords).map(([studentId, status]) => ({
+        studentId: parseInt(studentId),
+        status: status
+    }));
+
+    if (records.length === 0) {
+        alert('No students to submit attendance for.');
+        return;
+    }
+
+    const btn = document.getElementById('submitAttendanceBtn');
+    btn.disabled = true;
+    btn.innerText = 'Saving...';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/attendance/bulk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subjectId: parseInt(subjectId), date, records })
+        });
+
+        if (!response.ok) throw new Error('Failed to save attendance');
+
+        const result = await response.json();
+        alert(`✅ ${result.message}`);
+    } catch (err) {
+        console.error(err);
+        alert('Failed to save attendance. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Submit Attendance';
+    }
+}
+

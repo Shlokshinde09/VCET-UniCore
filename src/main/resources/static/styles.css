@@ -498,3 +498,62 @@ body {
     from { opacity: 0.6; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1.05); }
 }
+
+/* =============== ATTENDANCE STYLES =============== */
+
+.attendance-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: all 0.25s ease;
+}
+
+.att-present {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.att-absent {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.att-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.att-toggle-btn {
+    transition: all 0.2s ease;
+}
+.att-toggle-btn:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: scale(1.05);
+}
+
+/* Fix dropdown (select/option) visibility on dark theme */
+.admin-form select,
+#attendanceSubjectSelect {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.6rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.admin-form select option,
+#attendanceSubjectSelect option {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 0.5rem;
+}

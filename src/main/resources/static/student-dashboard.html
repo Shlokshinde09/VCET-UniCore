@@ -76,6 +76,33 @@
             </div>
         </div>
 
+        <!-- Attendance Summary Section -->
+        <div class="card table-card" id="attendanceSummaryCard" style="margin-bottom: 1.5rem; display:none;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>📋 Attendance Summary</h2>
+                <div style="display:flex; align-items:center; gap:1rem;">
+                    <span style="color:var(--text-muted); font-size:0.85rem;">Overall Attendance:</span>
+                    <span class="attendance-badge" id="overallAttendanceBadge" style="font-size:1rem; font-weight:700; padding:6px 16px;">--</span>
+                </div>
+            </div>
+            <div class="table-responsive" style="margin-top:1rem;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Total Classes</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>Attendance %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceSummaryBody">
+                        <!-- injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="grid-layout">
             <!-- Left Column: Chart & Table -->
             <div class="grid-col-2">

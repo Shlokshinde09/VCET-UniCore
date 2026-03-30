@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="admin-body">
 
     <div class="background-glow"></div>
@@ -20,17 +22,25 @@
         <aside class="sidebar">
             <div class="sidebar-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 2rem;">
                 <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-                    <div style="position: absolute; width: 120%; height: 120%; background: radial-gradient(circle, rgba(201,162,39,0.4) 0%, transparent 65%); filter: blur(8px); z-index: 0; animation: pulseGlow 3s infinite alternate;"></div>
-                    <img src="College_Logo_R-removebg-preview.png" alt="VCET Logo" style="height: 48px; width: auto; object-fit: contain; position: relative; z-index: 1; filter: drop-shadow(0 4px 12px rgba(201,162,39,0.4));">
+                    <div
+                        style="position: absolute; width: 120%; height: 120%; background: radial-gradient(circle, rgba(201,162,39,0.4) 0%, transparent 65%); filter: blur(8px); z-index: 0; animation: pulseGlow 3s infinite alternate;">
+                    </div>
+                    <img src="College_Logo_R-removebg-preview.png" alt="VCET Logo"
+                        style="height: 48px; width: auto; object-fit: contain; position: relative; z-index: 1; filter: drop-shadow(0 4px 12px rgba(201,162,39,0.4));">
                 </div>
-                <h2 style="font-size: 1.3rem; margin: 0; line-height: 1.2;">VCET<br><span style="font-size: 0.85rem; color: var(--accent-gold); font-family: 'DM Sans', sans-serif; font-weight: 500;">Admin Panel</span></h2>
+                <h2 style="font-size: 1.3rem; margin: 0; line-height: 1.2;">VCET<br><span
+                        style="font-size: 0.85rem; color: var(--accent-gold); font-family: 'DM Sans', sans-serif; font-weight: 500;">Admin
+                        Panel</span></h2>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" onclick="switchTab('dashboard', this); return false;">Overview</a>
                 <a href="#" class="nav-item" onclick="switchTab('students', this); return false;">Students</a>
                 <a href="#" class="nav-item" onclick="switchTab('subjects', this); return false;">Subjects</a>
                 <a href="#" class="nav-item" onclick="switchTab('results', this); return false;">Results</a>
-                <a href="#" class="nav-item" onclick="switchTab('analytics', this); loadAnalytics(); return false;">Analytics</a>
+                <a href="#" class="nav-item"
+                    onclick="switchTab('attendance', this); loadAttendanceTab(); return false;">Attendance</a>
+                <a href="#" class="nav-item"
+                    onclick="switchTab('analytics', this); loadAnalytics(); return false;">Analytics</a>
                 <a href="#" class="nav-item mt-auto" onclick="logout(); return false;">Logout</a>
             </nav>
         </aside>
@@ -39,13 +49,15 @@
         <main class="admin-main">
             <header class="admin-topbar">
                 <h1>Admin Dashboard</h1>
-                <div class="admin-profile" style="display: flex; align-items: center; background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 20px; border: 1px solid rgba(201, 162, 39, 0.2); box-shadow: inset 0 0 10px rgba(201, 162, 39, 0.05);">
-                    <span style="font-size: 1rem; font-weight: 600; color: var(--accent-gold); font-family: 'DM Sans', sans-serif; letter-spacing: 0.03em;">Administrator</span>
+                <div class="admin-profile"
+                    style="display: flex; align-items: center; background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 20px; border: 1px solid rgba(201, 162, 39, 0.2); box-shadow: inset 0 0 10px rgba(201, 162, 39, 0.05);">
+                    <span
+                        style="font-size: 1rem; font-weight: 600; color: var(--accent-gold); font-family: 'DM Sans', sans-serif; letter-spacing: 0.03em;">Administrator</span>
                 </div>
             </header>
 
             <div class="admin-content" id="adminContent">
-                
+
                 <!-- TAB: Dashboard Home -->
                 <div id="tab-dashboard" class="tab-pane active">
                     <div class="grid-cards">
@@ -170,12 +182,15 @@
 
                 <!-- TAB: Results -->
                 <div id="tab-results" class="tab-pane hidden">
-                    <div class="card form-card mb-4" style="display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:space-between;">
+                    <div class="card form-card mb-4"
+                        style="display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:space-between;">
                         <div>
                             <h2 style="margin-bottom:0.25rem;">Result data</h2>
-                            <p style="color: var(--text-muted); font-size:0.9rem; margin:0;">Upload or edit marks via the NEP entry screen.</p>
+                            <p style="color: var(--text-muted); font-size:0.9rem; margin:0;">Upload or edit marks via
+                                the NEP entry screen.</p>
                         </div>
-                        <a href="admin-result-entry.html" class="btn-primary" style="text-decoration:none; display:inline-block;">Open MU NEP result entry</a>
+                        <a href="admin-result-entry.html" class="btn-primary"
+                            style="text-decoration:none; display:inline-block;">Open MU NEP result entry</a>
                     </div>
                     <div class="card table-card">
                         <h2>Recent uploads</h2>
@@ -199,11 +214,69 @@
                     </div>
                 </div>
 
+                <!-- TAB: Attendance -->
+                <div id="tab-attendance" class="tab-pane hidden">
+                    <div class="card form-card mb-4">
+                        <h2>📋 Mark Attendance</h2>
+                        <p style="color: var(--text-muted); font-size:0.9rem; margin-bottom:1rem;">Select a subject and
+                            date, then mark each student as Present or Absent.</p>
+                        <div class="form-row" style="align-items: flex-end;">
+                            <div class="form-group">
+                                <label>Subject</label>
+                                <select id="attendanceSubjectSelect" onchange="loadAttendanceSheet()"
+                                    style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:var(--text-primary); font-size:0.9rem;">
+                                    <option value="">-- Select Subject --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="attendanceDateInput" onchange="loadAttendanceSheet()"
+                                    style="width:100%;">
+                            </div>
+                            <div class="form-group" style="flex: 0 0 auto;">
+                                <button type="button" class="btn-primary" onclick="submitBulkAttendance()"
+                                    id="submitAttendanceBtn" disabled>Submit Attendance</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card table-card" id="attendanceSheetCard" style="display:none;">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                            <h2 id="attendanceSheetTitle">Attendance Sheet</h2>
+                            <div style="display:flex; gap:0.5rem;">
+                                <button type="button" class="btn-outline" style="padding:4px 12px; font-size:12px;"
+                                    onclick="markAllAttendance('PRESENT')">✅ Mark All Present</button>
+                                <button type="button" class="btn-outline"
+                                    style="padding:4px 12px; font-size:12px; border-color:var(--accent-red); color:var(--accent-red);"
+                                    onclick="markAllAttendance('ABSENT')">❌ Mark All Absent</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Student Name</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                        <th>Toggle</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendanceTableBody">
+                                    <!-- injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- TAB: Analytics -->
                 <div id="tab-analytics" class="tab-pane hidden">
                     <div class="card table-card" style="margin-bottom: 1.5rem;">
                         <h2>📊 Student CGPA Rankings</h2>
-                        <p style="color: var(--text-muted); font-size:0.9rem; margin-bottom:1rem;">Live calculated from uploaded results. Click a row to view that student's full analytics.</p>
+                        <p style="color: var(--text-muted); font-size:0.9rem; margin-bottom:1rem;">Live calculated from
+                            uploaded results. Click a row to view that student's full analytics.</p>
                         <div class="table-responsive">
                             <table class="data-table">
                                 <thead>
@@ -216,7 +289,9 @@
                                     </tr>
                                 </thead>
                                 <tbody id="analyticsTableBody">
-                                    <tr><td colspan="5" style="text-align:center; padding:1rem;">Loading...</td></tr>
+                                    <tr>
+                                        <td colspan="5" style="text-align:center; padding:1rem;">Loading...</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -234,7 +309,8 @@
     </div>
 
     <!-- Edit student -->
-    <div id="editStudentModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editStudentTitle" onclick="if(event.target===this)closeEditStudentModal()">
+    <div id="editStudentModal" class="modal-overlay hidden" role="dialog" aria-modal="true"
+        aria-labelledby="editStudentTitle" onclick="if(event.target===this)closeEditStudentModal()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <h2 id="editStudentTitle">Edit student</h2>
             <form id="editStudentForm" class="admin-form">
@@ -244,8 +320,10 @@
                     <div class="form-group"><label>Email</label><input type="email" id="editStudEmail" required></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>Department</label><input type="text" id="editStudDept" required></div>
-                    <div class="form-group"><label>Semester</label><input type="number" id="editStudSem" min="1" max="8" required></div>
+                    <div class="form-group"><label>Department</label><input type="text" id="editStudDept" required>
+                    </div>
+                    <div class="form-group"><label>Semester</label><input type="number" id="editStudSem" min="1" max="8"
+                            required></div>
                 </div>
                 <div class="form-actions" style="margin-top:1rem;">
                     <button type="button" class="btn-outline" onclick="closeEditStudentModal()">Cancel</button>
@@ -256,15 +334,19 @@
     </div>
 
     <!-- Edit subject -->
-    <div id="editSubjectModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editSubjectTitle" onclick="if(event.target===this)closeEditSubjectModal()">
+    <div id="editSubjectModal" class="modal-overlay hidden" role="dialog" aria-modal="true"
+        aria-labelledby="editSubjectTitle" onclick="if(event.target===this)closeEditSubjectModal()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <h2 id="editSubjectTitle">Edit subject</h2>
             <form id="editSubjectForm" class="admin-form">
                 <input type="hidden" id="editSubId">
                 <div class="form-row">
-                    <div class="form-group"><label>Subject name</label><input type="text" id="editSubName" required></div>
-                    <div class="form-group"><label>Credits</label><input type="number" id="editSubCredits" min="1" max="6" required></div>
-                    <div class="form-group"><label>Semester</label><input type="number" id="editSubSem" min="1" max="8" required></div>
+                    <div class="form-group"><label>Subject name</label><input type="text" id="editSubName" required>
+                    </div>
+                    <div class="form-group"><label>Credits</label><input type="number" id="editSubCredits" min="1"
+                            max="6" required></div>
+                    <div class="form-group"><label>Semester</label><input type="number" id="editSubSem" min="1" max="8"
+                            required></div>
                 </div>
                 <div class="form-actions" style="margin-top:1rem;">
                     <button type="button" class="btn-outline" onclick="closeEditSubjectModal()">Cancel</button>
@@ -281,4 +363,5 @@
         });
     </script>
 </body>
+
 </html>
