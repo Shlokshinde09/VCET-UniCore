@@ -120,7 +120,7 @@ async function addStudent(e) {
         if (!response.ok) throw new Error("Failed to add student");
 
         const result = await response.json();
-        alert(`✅ Student added successfully!\n\nThe account is unclaimed. Please privately send the student their registered email and this unique 8-character Claim Code to set up their password:\n\nCLAIM CODE: ${result.claimToken}`);
+        alert(`✅ Student added successfully!\n\nAn official Welcome Email containing the required Claim Code (${result.claimToken}) has been automatically dispatched to ${email}.`);
         e.target.reset();
         await loadStudents();
     } catch (err) {
@@ -454,6 +454,86 @@ async function resetStudentPassword(id) {
     } catch (err) {
         console.error(err);
         alert('Could not reset password. Check that the student exists and backend is running.');
+    }
+}
+
+/** ---------------- BULK UPLOAD EXCEL/CSV ---------------- **/
+async function bulkUploadStudents() {
+    const fileInput = document.getElementById('studentsCsvFile');
+    if (!fileInput.files.length) {
+        alert("Please select a CSV file first!");
+        return;
+    }
+    
+    // Change button text to indicate loading
+    const btn = event.target;
+    const oldText = btn.innerText;
+    btn.innerText = "Uploading...";
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/students/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            alert("✅ " + result.message);
+            fileInput.value = "";
+            document.getElementById('studFileLabel').innerText = "Choose CSV...";
+            await loadStudents();
+        } else {
+            alert(`Upload Failed: ${result.error || response.statusText}`);
+        }
+    } catch (err) {
+        console.error("Bulk upload students error:", err);
+        alert("An error occurred during bulk upload.");
+    } finally {
+        btn.innerText = oldText;
+        btn.disabled = false;
+    }
+}
+
+async function bulkUploadResults() {
+    const fileInput = document.getElementById('resultsCsvFile');
+    if (!fileInput.files.length) {
+        alert("Please select a CSV file first!");
+        return;
+    }
+    
+    const btn = event.target;
+    const oldText = btn.innerText;
+    btn.innerText = "Processing...";
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/results/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            alert("✅ " + result.message);
+            fileInput.value = "";
+            document.getElementById('resFileLabel').innerText = "Choose CSV...";
+            await loadResults();
+        } else {
+            alert(`Upload Failed: ${result.error || response.statusText}`);
+        }
+    } catch (err) {
+        console.error("Bulk upload results error:", err);
+        alert("An error occurred during bulk upload.");
+    } finally {
+        btn.innerText = oldText;
+        btn.disabled = false;
     }
 }
 

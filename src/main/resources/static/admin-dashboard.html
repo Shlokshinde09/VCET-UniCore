@@ -74,17 +74,18 @@
 
                 <!-- TAB: Manage Students -->
                 <div id="tab-students" class="tab-pane hidden">
-                    <div class="card form-card mb-4">
-                        <h2>Add New Student</h2>
-                        <form id="addStudentForm" class="admin-form">
+                    <div class="card form-card mb-4" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+                        <div style="flex:1; min-width:300px;">
+                            <h2>Add New Student</h2>
+                            <form id="addStudentForm" class="admin-form">
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Name</label>
                                     <input type="text" id="studName" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Email</label>
-                                    <input type="email" id="studEmail" required>
+                                    <label>Official Email</label>
+                                    <input type="email" id="studEmail" required placeholder="you@vcet.edu.in">
                                 </div>
                             </div>
                             <div class="form-row">
@@ -97,8 +98,15 @@
                                     <input type="number" id="studSem" min="1" max="8" required>
                                 </div>
                             </div>
-                            <button type="submit" class="btn-primary">Add Student</button>
-                        </form>
+                            </form>
+                        </div>
+                        <div style="padding-left:1rem; border-left:1px solid rgba(255,255,255,0.1); display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+                            <h2 style="margin-bottom:0.5rem; font-size:1.1rem;">Bulk Import</h2>
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem; max-width:200px;">Upload a CSV file (Name, Email, Dept, Sem) to add multiple students instantly.</p>
+                            <input type="file" id="studentsCsvFile" accept=".csv" style="display:none;" onchange="document.getElementById('studFileLabel').innerText = this.files[0].name;">
+                            <label for="studentsCsvFile" class="btn-outline" id="studFileLabel" style="cursor:pointer; margin-bottom:0.5rem; display:block; width:100%; box-sizing:border-box;">Choose CSV...</label>
+                            <button type="button" class="btn-primary" onclick="bulkUploadStudents()" style="width:100%;">Upload Students</button>
+                        </div>
                     </div>
 
                     <div class="card table-card">
@@ -173,9 +181,14 @@
                     <div class="card form-card mb-4" style="display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:space-between;">
                         <div>
                             <h2 style="margin-bottom:0.25rem;">Result data</h2>
-                            <p style="color: var(--text-muted); font-size:0.9rem; margin:0;">Upload or edit marks via the NEP entry screen.</p>
+                            <p style="color: var(--text-muted); font-size:0.9rem; margin:0; max-width:400px;">Upload marks via the NEP entry screen, or bulk upload hundreds of results instantly using a CSV file.</p>
                         </div>
-                        <a href="admin-result-entry.html" class="btn-primary" style="text-decoration:none; display:inline-block;">Open MU NEP result entry</a>
+                        <div style="display:flex; gap:1rem; align-items:center;">
+                            <input type="file" id="resultsCsvFile" accept=".csv" style="display:none;" onchange="document.getElementById('resFileLabel').innerText = this.files[0].name;">
+                            <label for="resultsCsvFile" class="btn-outline" id="resFileLabel" style="cursor:pointer; margin:0;">Choose CSV...</label>
+                            <button type="button" class="btn-primary" style="background-color: var(--accent-gold); color: #000;" onclick="bulkUploadResults()">Upload Results</button>
+                            <a href="admin-result-entry.html" class="btn-primary" style="text-decoration:none; display:inline-block;">Open NEP Entry</a>
+                        </div>
                     </div>
                     <div class="card table-card">
                         <h2>Recent uploads</h2>

@@ -35,14 +35,14 @@ function switchTab(tabId, navEl) {
 async function loadStudents() {
     try {
         const response = await fetch(`${API_BASE_URL}/students`);
-        if(!response.ok) throw new Error("Failed to load students");
-        
+        if (!response.ok) throw new Error("Failed to load students");
+
         studentsList = await response.json();
-        
+
         // Update Table
         const tbody = document.getElementById('adminStudentsTableBody');
         tbody.innerHTML = '';
-        
+
         const cgpas = [];
         for (const s of studentsList) {
             try {
@@ -92,7 +92,7 @@ async function loadStudents() {
         document.getElementById('adminPlacementReady').innerText = String(placementReady);
         document.getElementById('adminRiskCount').innerText = String(atRisk);
 
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         alert("Error loading students list.");
     }
@@ -117,13 +117,13 @@ async function addStudent(e) {
             body: JSON.stringify(studentData)
         });
 
-        if(!response.ok) throw new Error("Failed to add student");
+        if (!response.ok) throw new Error("Failed to add student");
 
         const result = await response.json();
-        alert(`✅ Student added successfully!\n\nThe account is unclaimed. Please privately send the student their registered email and this unique 8-character Claim Code to set up their password:\n\nCLAIM CODE: ${result.claimToken}`);
+        alert(`✅ Student added successfully!\n\nAn official Welcome Email containing the required Claim Code (${result.claimToken}) has been automatically dispatched to ${email}.`);
         e.target.reset();
         await loadStudents();
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         alert("Failed to add student. Ensure backend is running.");
     } finally {
@@ -132,18 +132,18 @@ async function addStudent(e) {
 }
 
 async function deleteStudent(id) {
-    if(!confirm(`Are you sure you want to delete Student ID: ${id}?`)) return;
+    if (!confirm(`Are you sure you want to delete Student ID: ${id}?`)) return;
 
     try {
         const response = await fetch(`${API_BASE_URL}/students/${id}`, {
             method: 'DELETE'
         });
 
-        if(!response.ok) throw new Error("Failed to delete student");
+        if (!response.ok) throw new Error("Failed to delete student");
 
         alert("Student deleted successfully!");
         await loadStudents(); // Refresh table
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         alert("Failed to delete student. They might have dependent results.");
     }
@@ -208,12 +208,12 @@ async function addSubject(e) {
             body: JSON.stringify(subjectData)
         });
 
-        if(!response.ok) throw new Error("Failed to add subject");
+        if (!response.ok) throw new Error("Failed to add subject");
 
         alert("Subject added successfully!");
         e.target.reset();
         await loadSubjects(); // Refresh
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         alert("Failed to add subject.");
     } finally {
@@ -224,7 +224,7 @@ async function addSubject(e) {
 async function loadSubjects() {
     try {
         const response = await fetch(`${API_BASE_URL}/subjects`);
-        if(!response.ok) throw new Error("Failed to load subjects");
+        if (!response.ok) throw new Error("Failed to load subjects");
         subjectsList = await response.json();
 
         const tbody = document.getElementById('adminSubjectsTableBody');
@@ -244,7 +244,7 @@ async function loadSubjects() {
                 </tr>
             `;
         });
-    } catch(err) {
+    } catch (err) {
         console.error(err);
     }
 }
@@ -287,18 +287,18 @@ async function submitEditSubject(e) {
 }
 
 async function deleteSubject(id) {
-    if(!confirm(`Are you sure you want to delete Subject ID: ${id}?`)) return;
+    if (!confirm(`Are you sure you want to delete Subject ID: ${id}?`)) return;
 
     try {
         const response = await fetch(`${API_BASE_URL}/subjects/${id}`, {
             method: 'DELETE'
         });
 
-        if(!response.ok) throw new Error("Failed to delete subject");
+        if (!response.ok) throw new Error("Failed to delete subject");
 
         alert("Subject deleted successfully!");
         await loadSubjects(); // Refresh table
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         alert("Failed to delete subject. Results may be dependent on it.");
     }
@@ -309,22 +309,22 @@ async function deleteSubject(id) {
 async function loadResults() {
     try {
         const response = await fetch(`${API_BASE_URL}/results`);
-        if(!response.ok) throw new Error("Failed to load results");
+        if (!response.ok) throw new Error("Failed to load results");
         const resultsList = await response.json();
-        
+
         const tbody = document.getElementById('adminResultsTableBody');
         tbody.innerHTML = '';
-        
+
         // Show most recent first (assume last in array is newest)
         const recentResults = resultsList.slice().reverse().slice(0, 50); // Show max 50 recent
-        
+
         recentResults.forEach(res => {
             const studentId = res.student ? res.student.id : 'N/A';
             const courseName = res.courseName || (res.subject ? res.subject.subjectName : 'N/A');
             const total = res.totalMarks || '-';
             const gp = res.gradePoint || '0';
             const cg = res.creditGrade || '-';
-            
+
             tbody.innerHTML += `
                 <tr>
                     <td><strong>#${studentId}</strong></td>
@@ -336,7 +336,7 @@ async function loadResults() {
                 </tr>
             `;
         });
-    } catch(err) {
+    } catch (err) {
         console.error("No global results /results endpoint found or error", err);
     }
 }
@@ -376,7 +376,7 @@ async function loadAnalytics() {
             const cgpaRes = await fetch(`${API_BASE_URL}/results/cgpa/${s.id}`);
             const cgpa = cgpaRes.ok ? await cgpaRes.json() : 0;
             studentData.push({ ...s, cgpa: parseFloat(cgpa) || 0 });
-        } catch(_) {
+        } catch (_) {
             studentData.push({ ...s, cgpa: 0 });
         }
     }
@@ -393,7 +393,7 @@ async function loadAnalytics() {
         else if (s.cgpa > 0) badge = '<span style="color:#ef4444; font-weight:600;">✗ Below Placement Cutoff</span>';
         else badge = '<span style="color:#94a3b8;">No Results Yet</span>';
 
-        const rankEmoji = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
+        const rankEmoji = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
         tbody.innerHTML += `
             <tr style="cursor:pointer;" onclick="openStudentPreview(${s.id})">
                 <td><strong>${rankEmoji}</strong></td>
@@ -454,6 +454,86 @@ async function resetStudentPassword(id) {
     } catch (err) {
         console.error(err);
         alert('Could not reset password. Check that the student exists and backend is running.');
+    }
+}
+
+/** ---------------- BULK UPLOAD EXCEL/CSV ---------------- **/
+async function bulkUploadStudents() {
+    const fileInput = document.getElementById('studentsCsvFile');
+    if (!fileInput.files.length) {
+        alert("Please select a CSV file first!");
+        return;
+    }
+    
+    // Change button text to indicate loading
+    const btn = event.target;
+    const oldText = btn.innerText;
+    btn.innerText = "Uploading...";
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/students/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            alert("✅ " + result.message);
+            fileInput.value = "";
+            document.getElementById('studFileLabel').innerText = "Choose CSV...";
+            await loadStudents();
+        } else {
+            alert(`Upload Failed: ${result.error || response.statusText}`);
+        }
+    } catch (err) {
+        console.error("Bulk upload students error:", err);
+        alert("An error occurred during bulk upload.");
+    } finally {
+        btn.innerText = oldText;
+        btn.disabled = false;
+    }
+}
+
+async function bulkUploadResults() {
+    const fileInput = document.getElementById('resultsCsvFile');
+    if (!fileInput.files.length) {
+        alert("Please select a CSV file first!");
+        return;
+    }
+    
+    const btn = event.target;
+    const oldText = btn.innerText;
+    btn.innerText = "Processing...";
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/results/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            alert("✅ " + result.message);
+            fileInput.value = "";
+            document.getElementById('resFileLabel').innerText = "Choose CSV...";
+            await loadResults();
+        } else {
+            alert(`Upload Failed: ${result.error || response.statusText}`);
+        }
+    } catch (err) {
+        console.error("Bulk upload results error:", err);
+        alert("An error occurred during bulk upload.");
+    } finally {
+        btn.innerText = oldText;
+        btn.disabled = false;
     }
 }
 

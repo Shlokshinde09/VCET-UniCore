@@ -129,6 +129,10 @@ public class AnalysisController {
     @GetMapping("/target/{studentId}")
     public Map<String,Object> calculateTarget(@PathVariable Long studentId) throws Exception {
 
+        List<Result> results = resultRepository.findByStudentId(studentId);
+        AcademicAnalyticsService.StudentMetrics metrics = analyticsService.calculateAdvancedMetrics(results);
+        int backlogs = metrics.backlogCount();
+        double internalConsistency = metrics.internalConsistency();
         // Get semester SGPA from analytics service
         Map<Integer,Double> semesterSgpa =
                 analyticsService.calculateSemesterSGPA(studentId);
@@ -147,7 +151,7 @@ public class AnalysisController {
 
         // AI prediction
         double predictedNextSGPA =
-                aiPredictionService.predictNextSGPA(sgpas);
+                aiPredictionService.predictNextSGPA(sgpas, backlogs, internalConsistency);
 
         Map<String,Object> response = new HashMap<>();
 
@@ -355,12 +359,14 @@ public class AnalysisController {
         Map<Integer,List<Result>> semesterResults = new HashMap<>();
 
         for(Result r : results){
-            int sem = r.getSemester();
-
             semesterResults
-                    .computeIfAbsent(sem,k->new ArrayList<>())
+                    .computeIfAbsent(r.getSemester(),k->new ArrayList<>())
                     .add(r);
         }
+        
+        AcademicAnalyticsService.StudentMetrics metrics = analyticsService.calculateAdvancedMetrics(results);
+        int backlogs = metrics.backlogCount();
+        double internalConsistency = metrics.internalConsistency();
 
         // Calculate SGPA for each semester
         List<Double> sgpas = new ArrayList<>();
@@ -397,7 +403,9 @@ public class AnalysisController {
                 sgpas.get(0),
                 sgpas.get(1),
                 sgpas.get(2),
-                sgpas.get(3)
+                sgpas.get(3),
+                backlogs,
+                internalConsistency
         );
 
         Map<String,Object> response = new HashMap<>();
@@ -416,20 +424,19 @@ public class AnalysisController {
 
         double totalWeightedScore = 0;
         int totalCredits = 0;
-
         Map<Integer,List<Result>> semesterResults = new HashMap<>();
 
         for(Result r : results){
-
             totalWeightedScore += r.getGradePoint()*r.getCredits();
             totalCredits += r.getCredits();
-
-            int sem = r.getSemester();
-
             semesterResults
-                    .computeIfAbsent(sem,k->new ArrayList<>())
+                    .computeIfAbsent(r.getSemester(),k->new ArrayList<>())
                     .add(r);
         }
+
+        AcademicAnalyticsService.StudentMetrics metrics = analyticsService.calculateAdvancedMetrics(results);
+        int backlogs = metrics.backlogCount();
+        double internalConsistency = metrics.internalConsistency();
 
         // Current CGPA
         double cgpa = totalCredits==0?0:totalWeightedScore/totalCredits;
@@ -463,7 +470,9 @@ public class AnalysisController {
                 sgpas.get(0),
                 sgpas.get(1),
                 sgpas.get(2),
-                sgpas.get(3)
+                sgpas.get(3),
+                backlogs,
+                internalConsistency
         );
 
         predictedCGPA = Math.round(predictedCGPA*100.0)/100.0;
@@ -508,6 +517,11 @@ public class AnalysisController {
 
         Map<String,Object> response = new HashMap<>();
 
+        List<Result> results = resultRepository.findByStudentId(studentId);
+        AcademicAnalyticsService.StudentMetrics metrics = analyticsService.calculateAdvancedMetrics(results);
+        int backlogs = metrics.backlogCount();
+        double internalConsistency = metrics.internalConsistency();
+
         // CGPA
         double cgpa = analyticsService.calculateCGPA(studentId);
 
@@ -545,7 +559,9 @@ public class AnalysisController {
                         sgpas.get(0),
                         sgpas.get(1),
                         sgpas.get(2),
-                        sgpas.get(3)
+                        sgpas.get(3),
+                        backlogs,
+                        internalConsistency
                 );
 
         predictedCGPA = Math.round(predictedCGPA * 100.0) / 100.0;

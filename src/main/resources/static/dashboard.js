@@ -10,9 +10,8 @@ const studentId = localStorage.getItem('studentId') || 1; // Default to 1 for de
 async function initStudentDashboard() {
     try {
         // Fetch core KPIs concurrently where applicable
-        const [cgpa, readiness, aiCgpa, aiTarget, trendData, advisor, companies, rawResults] = await Promise.all([
+        const [cgpa, aiCgpa, aiTarget, trendData, advisor, companies, rawResults] = await Promise.all([
             fetchData(`/results/cgpa/${studentId}`),
-            fetchData(`/analysis/readiness/${studentId}`),
             fetchData(`/analysis/ai-cgpa/${studentId}`),
             fetchData(`/analysis/target/${studentId}`),
             fetchData(`/analysis/trend/${studentId}`),
@@ -21,20 +20,27 @@ async function initStudentDashboard() {
             fetchData(`/results/student/${studentId}`) // Fetches List<Result>
         ]);
 
+        // Handle Empty State for New Students
+        if (!Array.isArray(rawResults) || rawResults.length === 0) {
+            document.getElementById('cgpa').innerText = 'No Data';
+            document.getElementById('aiCgpa').innerText = '--';
+            document.getElementById('targetSgpa').innerText = '--';
+            document.getElementById('adviceText').innerText = "Welcome! Once your semester results are uploaded by the college, your AI Academic Advisor will awaken to analyze your performance and predict your trajectory.";
+            document.getElementById('placementDesc').innerText = "Complete at least one semester to see campus placement eligibility.";
+            const tableBody = document.getElementById('subjectTableBody');
+            if (tableBody) tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 30px; color: #a0aec0;">No semester results uploaded yet.</td></tr>';
+            const riskBanner = document.getElementById('riskBanner');
+            if (riskBanner) riskBanner.classList.add('hidden');
+            
+            document.getElementById('dashboardContent').style.opacity = 1;
+            return;
+        }
+
         // Process data for UI
         document.getElementById('cgpa').innerText = cgpa || '0.0';
-        document.getElementById('readinessScore').innerText = readiness ? readiness.readinessScore + '%' : '0%';
+        // Placement readiness UI removed per user request
         document.getElementById('aiCgpa').innerText = aiCgpa && aiCgpa.predictedFinalCGPA !== undefined ? Number(aiCgpa.predictedFinalCGPA).toFixed(2) : '--';
         document.getElementById('targetSgpa').innerText = aiTarget && aiTarget.aiTargetSGPA !== undefined ? Number(aiTarget.aiTargetSGPA).toFixed(2) : '--';
-
-        // Readiness Color logic
-        const readinessEl = document.getElementById('readinessScore');
-        const readLvl = document.getElementById('readinessLevel');
-        
-        let readVal = readiness ? readiness.readinessScore : 0;
-        if (readVal > 80) { readinessEl.style.color = 'var(--accent-green)'; readLvl.innerText = 'Highly Prepared'; }
-        else if (readVal > 60) { readinessEl.style.color = 'var(--accent-orange)'; readLvl.innerText = 'Needs Improvement'; }
-        else { readinessEl.style.color = 'var(--accent-red)'; readLvl.innerText = 'Critical Action Needed'; }
 
         // Advisor & Companies
         document.getElementById('adviceText').innerText = advisor?.advice || "Keep working hard!";
