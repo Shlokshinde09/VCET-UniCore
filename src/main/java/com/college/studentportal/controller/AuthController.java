@@ -19,11 +19,13 @@ public class AuthController {
     private final StudentRepository studentRepository;
     private final AdminRepository adminRepository;
     private final AuthService authService;
+    private final com.college.studentportal.service.EmailService emailService;
 
-    public AuthController(StudentRepository studentRepository, AdminRepository adminRepository, AuthService authService) {
+    public AuthController(StudentRepository studentRepository, AdminRepository adminRepository, AuthService authService, com.college.studentportal.service.EmailService emailService) {
         this.studentRepository = studentRepository;
         this.adminRepository = adminRepository;
         this.authService = authService;
+        this.emailService = emailService;
     }
 
     @PostMapping("/login")
@@ -91,16 +93,30 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public Map<String, String> forgotPassword(@RequestParam("email") String email) {
+    public ResponseEntity<?> forgotPassword(@RequestParam("email") String email) {
         if (email == null || email.isBlank()) {
-            return Map.of("message", "Please enter your registered email address.");
+            return ResponseEntity.badRequest().body(Map.of("message", "Please enter your registered email address."));
         }
-        return Map.of(
-                "message",
-                "Your account was created by the college administration. "
-                        + "If you've forgotten your password, please contact your class coordinator or visit the IT Help Desk "
-                        + "with your college ID card to get your password reset. "
-                        + "Administrators: contact the IT department directly for credential recovery."
-        );
+        
+        Optional<Student> studentOpt = studentRepository.findByEmail(email);
+        if (studentOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "No student account found with the provided email address."));
+        }
+        
+        Student student = studentOpt.get();
+        // Generate a random 8-character token
+        String resetToken = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        
+        student.setClaimToken(resetToken);
+        student.setPassword(null); // Clear password to allow reclaiming
+        studentRepository.save(student);
+        
+        // Dispatch live email to the student
+        emailService.sendPasswordResetEmail(student.getEmail(), student.getName(), resetToken);
+        
+        return ResponseEntity.ok(Map.of(
+                "message", "A password reset email with detailed instructions has been successfully forwarded to your inbox."
+        ));
     }
+
 }

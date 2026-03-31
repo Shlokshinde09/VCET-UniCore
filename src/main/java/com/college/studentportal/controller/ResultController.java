@@ -3,8 +3,14 @@ package com.college.studentportal.controller;
 import com.college.studentportal.model.*;
 import com.college.studentportal.repository.*;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/results")
@@ -56,6 +62,104 @@ public class ResultController {
         result.setCreditGrade(point * result.getCredits());
 
         return resultRepository.save(result);
+    }
+
+    /**
+     * Bulk Upload Results via CSV
+     * Format: Student Email, Course Code, Course Name, Internal Marks, External Marks, Credits, Semester
+     */
+    @PostMapping("/upload")
+    public org.springframework.http.ResponseEntity<Map<String, Object>> uploadResults(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return org.springframework.http.ResponseEntity.badRequest().body(Map.of("error", "File is empty"));
+        }
+
+        List<Result> createdResults = new ArrayList<>();
+        int skipped = 0;
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            boolean isFirstLine = true;
+            
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                
+                String[] columns = line.split(",");
+                if (columns.length < 7) continue;
+
+                String email = columns[0].trim();
+                String courseCode = columns[1].trim();
+                String courseName = columns[2].trim();
+                String internalStr = columns[3].trim();
+                String externalStr = columns[4].trim();
+                String creditsStr = columns[5].trim();
+                String semStr = columns[6].trim();
+
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    if (email.toLowerCase().contains("email") || courseCode.toLowerCase().contains("course")) {
+                        continue;
+                    }
+                }
+
+                Optional<Student> studentOpt = studentRepository.findByEmail(email);
+                if (studentOpt.isEmpty()) {
+                    skipped++;
+                    System.err.println("Cannot assign result to non-existent student email: " + email);
+                    continue;
+                }
+
+                try {
+                    double internalMarks = Double.parseDouble(internalStr);
+                    double externalMarks = Double.parseDouble(externalStr);
+                    int credits = Integer.parseInt(creditsStr);
+                    int semester = Integer.parseInt(semStr);
+
+                    Result result = new Result();
+                    result.setStudent(studentOpt.get());
+                    result.setCourseCode(courseCode);
+                    result.setCourseName(courseName);
+                    result.setInternalMarks(internalMarks);
+                    result.setExternalMarks(externalMarks);
+                    result.setCredits(credits);
+                    result.setSemester(semester);
+
+                    // MU NEP Calculation Logic
+                    double total = internalMarks + externalMarks;
+                    result.setTotalMarks(total);
+
+                    String grade = "F";
+                    double point = 0.0;
+                    if (total >= 90) { grade = "O"; point = 10.0; }
+                    else if (total >= 80) { grade = "A+"; point = 9.0; }
+                    else if (total >= 70) { grade = "A"; point = 8.0; }
+                    else if (total >= 60) { grade = "B+"; point = 7.0; }
+                    else if (total >= 50) { grade = "B"; point = 6.0; }
+                    else if (total >= 45) { grade = "C"; point = 5.0; }
+                    else if (total >= 40) { grade = "P"; point = 4.0; }
+
+                    result.setGrade(grade);
+                    result.setGradePoint(point);
+                    result.setCreditGrade(point * credits);
+
+                    createdResults.add(result);
+                } catch (NumberFormatException ignored) {
+                    skipped++;
+                }
+            }
+            
+            resultRepository.saveAll(createdResults);
+            
+            return org.springframework.http.ResponseEntity.ok(Map.of(
+                    "message", "Successfully imported " + createdResults.size() + " results. Skipped " + skipped + " bad rows/missing students.",
+                    "importedCount", createdResults.size(),
+                    "skippedCount", skipped
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return org.springframework.http.ResponseEntity.status(500).body(Map.of("error", "Error processing CSV file: " + e.getMessage()));
+        }
     }
 
     // 🔹 Get results of a student

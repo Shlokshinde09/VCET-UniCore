@@ -89,4 +89,17 @@ public class AcademicAnalyticsService {
         return insights;
     }
 
+    public record StudentMetrics(int backlogCount, double internalConsistency) {}
+
+    public StudentMetrics calculateAdvancedMetrics(List<Result> results) {
+        int backlogs = 0;
+        double intT = 0, extT = 0;
+        for (Result r : results) {
+            if (r.getGradePoint() < 5) backlogs++;
+            intT += r.getInternalMarks();
+            extT += r.getExternalMarks();
+        }
+        double internalConsistency = (intT + extT == 0) ? 0 : intT / (intT + extT);
+        return new StudentMetrics(backlogs, internalConsistency);
+    }
 }
